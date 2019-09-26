@@ -12,7 +12,6 @@
 #pragma link C++ class SampleInfo+;
 //#pragma link C++ class LorentzVector+;
 //#pragma link C++ class Point3D+;
-#pragma link C++ class MyMCParticle+;
 #pragma link C++ class MyVertex+;
 #pragma link C++ class std::vector<MyVertex>;
 #pragma link C++ class MyMET+;

@@ -7,13 +7,7 @@
 #include <map>
 
 using namespace std;
-void Analyzer::CutFlowAnalysis(TString url, bool isMuChannel, bool isEleChannel){
-  
-  TString outFile("13TeV/outputDir/");
-  TString Filename_ = outFile+"_Anal.root";
-  TFile *outFile_ = TFile::Open( Filename_, "RECREATE" );
-  outFile_->SetCompressionLevel(9);
-  
+void Analyzer::CutFlowAnalysis(TString url, bool isMuChannel, bool isEleChannel, TFile *outFile_){
   //check if the input file is MC or Data  
   Reader *evR_;  
   evR_ = new Reader();
@@ -26,11 +20,10 @@ void Analyzer::CutFlowAnalysis(TString url, bool isMuChannel, bool isEleChannel)
   if(isEleChannel) chName = "Electron";
 
   CutFlowProcessor(url,  chName+"/base", outFile_);
-
+  /*
   //---------------------------------------------------//
   //for systematics (all sys in one go)
   //---------------------------------------------------//  
-  /*
   if(!ev_->isData){ 
     CutFlowProcessor(url,  chName+"/JESPlus",       outFile_);
     CutFlowProcessor(url,  chName+"/JESMinus",      outFile_);
@@ -42,8 +35,6 @@ void Analyzer::CutFlowAnalysis(TString url, bool isMuChannel, bool isEleChannel)
     CutFlowProcessor(url,  chName+"/TopPtMinus", 	outFile_);
   }
   */
-  outFile_->Write(); 
-  outFile_->Close();
   f_->Close();
   delete f_;
 }
@@ -225,7 +216,7 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
     }
     if(!passTrig) continue;
     double nCutPass = 1.0;
-    fillHisto(outFile_, cutflowType+"/Iso", "", "cutflow", 20, 0.5, 20.5, nCutPass, evtWeight );
+    fillHisto(outFile_, cutflowType, "", "cutflow", 20, 0.5, 20.5, nCutPass, evtWeight );
    
     //---------------------------------------------------//
     //get all objets e.g. leptons, jets, vertices etc.
@@ -257,14 +248,16 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
     //---------------------------------------------------//
     //apply selection cuts on leptons
     //---------------------------------------------------//
-    double pri_vtxs = Vertices[0].totVtx;
     int nLepton = 0;
+    if(isMuChannel) nLepton = m_init.size();
+    if(isEleChannel) nLepton = e_init.size();
+    if(nLepton < 2)continue;
+    double pri_vtxs = Vertices[0].totVtx;
     int charge1 = 0;
     int charge2 = 0;
     int lepton1 = 0;
     int lepton2 = 0;
     if(isMuChannel){
-      nLepton = m_init.size();
       lepton1 = m_init[0];
       lepton2 = m_init[1];
       charge1 = pfMuons[lepton1].charge;
@@ -276,7 +269,6 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
         fillHisto(outFile_, cutflowType, "", "oppCharge", 10, -2, 2, 1, evtWeight);
     }
     if(isEleChannel){
-      nLepton = e_init.size();
       lepton1 = e_init[0];
       lepton2 = e_init[1];
       charge1 = pfElectrons[lepton1].charge;
@@ -289,7 +281,6 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
     }
 
     //both lepton should have opposite charge
-    if(nLepton < 2)continue;
     if(charge1 == charge2) continue;
     
     //veto first or 2nd muon, if they are fake
@@ -364,7 +355,7 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
     evtWeight *= leptonSF;
     fillHisto(outFile_, cutflowType, "", "leptonSF", 1000, 0, 100, leptonSF, 1 );
     string cutflowType_(cutflowType);
-    cutflowType_ = cutflowType+"/Iso";
+    cutflowType_ = cutflowType;
     
     //---------------------------------------------------//
     //get 4 vector for Z boson
@@ -750,8 +741,8 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
       double ak8Tau21 = pfJets[ind_jet].ak8Tau2/pfJets[ind_jet].ak8Tau1;
       //if(pfCISV <= 0.9535 && 
       if( isControlSel && isBTagVeto && isPreSel && jetPt >200 && jetPmass > 70 && jetPmass < 110){
-	countFatJetAgain ++;
-	allZjetBkgEst.push_back(ijet);
+	    countFatJetAgain ++;
+	    allZjetBkgEst.push_back(ijet);
       }
     }
     if(countFatJetAgain==1){
@@ -759,12 +750,12 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
       MyLorentzVector vZmax;
       MyLorentzVector vZmin;
       if(isMuChannel){
-        vZmax =  pfJets[j_final[allZjet[0]]].p4 + pfMuons[lepton1].p4;
-        vZmin =  pfJets[j_final[allZjet[0]]].p4 + pfMuons[lepton2].p4;
+        vZmax =  pfJets[j_final[allZjetBkgEst[0]]].p4 + pfMuons[lepton1].p4;
+        vZmin =  pfJets[j_final[allZjetBkgEst[0]]].p4 + pfMuons[lepton2].p4;
       }
       if(isEleChannel){
-        vZmax =  pfJets[j_final[allZjet[0]]].p4 + pfElectrons[lepton1].p4;
-        vZmin =  pfJets[j_final[allZjet[0]]].p4 + pfElectrons[lepton2].p4;
+        vZmax =  pfJets[j_final[allZjetBkgEst[0]]].p4 + pfElectrons[lepton1].p4;
+        vZmin =  pfJets[j_final[allZjetBkgEst[0]]].p4 + pfElectrons[lepton2].p4;
       }
       double mlZmax = 0.0;
       double mlZmin = 0.0;
@@ -777,7 +768,8 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
         mlZmin = vZmax.M();
       }
       double ml1l2 = vZ.M();
-      double tau21 = pfJets[j_final[allZjetBkgEst[0]]].ak8Tau2/pfJets[j_final[allZjetBkgEst[0]]].ak8Tau1;
+      double tau21 = 0.5;
+      //double tau21 = pfJets[j_final[allZjetBkgEst[0]]].ak8Tau2/pfJets[j_final[allZjetBkgEst[0]]].ak8Tau1;
       fillHisto2D(outFile_, cutflowType_,"ZTag", "ml1l2_tau21",10, 0, 1, tau21, 1000, 0, 10000, ml1l2, evtWeight);
       bool isRegionA = false;
       bool isRegionB = false;
@@ -790,7 +782,6 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
       if(isRegionA){ //for sanity checks
         fillHisto(outFile_, cutflowType_, "ZTag","mlZ_min_ZTag", 500, 0, 10000, mlZmin, evtWeight );
       }
-
       //L-cut
       vector<string> sigMass;
       vector<double> lCutMin;
@@ -829,33 +820,33 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
         for(unsigned int d = 0; d<dirVec.size(); d++){
           TString dir = dirVec[d];
           if(mlZmax > (max + yStepVec[d]) && mlZmin < (min + xStepVec[d])){
-          fillHisto(outFile_, cutflowType_, dir,"ABCD_mlZ_min_sig"+mass, 500, 0, 10000, mlZmin, evtWeight );
-          fillHisto(outFile_, cutflowType_, dir,"ABCD_mlZ_max_sig"+mass, 500, 0, 10000, mlZmax, evtWeight );
-          fillHisto(outFile_, cutflowType_, dir,"ABCD_genWeight", 500, -2, 2, genWeight, 1);
+          fillHisto(outFile_, cutflowType_, dir+"/ABCD","ABCD_mlZ_min_sig"+mass, 500, 0, 10000, mlZmin, evtWeight );
+          fillHisto(outFile_, cutflowType_, dir+"/ABCD","ABCD_mlZ_max_sig"+mass, 500, 0, 10000, mlZmax, evtWeight );
+          fillHisto(outFile_, cutflowType_, dir+"/ABCD","ABCD_genWeight", 500, -2, 2, genWeight, 1);
           }
           //Region-A
           if(mlZmax > (max + yStepVec[d]) && mlZmin < (min + xStepVec[d]) && isRegionA){
-          fillHisto(outFile_, cutflowType_, dir,"A_mlZ_min_sig"+mass, 500, 0, 10000, mlZmin, evtWeight );
-          fillHisto(outFile_, cutflowType_, dir,"A_mlZ_max_sig"+mass, 500, 0, 10000, mlZmax, evtWeight );
-          fillHisto(outFile_, cutflowType_, dir,"A_genWeight", 500, -2, 2, genWeight, 1);
+          fillHisto(outFile_, cutflowType_, dir+"/A","A_mlZ_min_sig"+mass, 500, 0, 10000, mlZmin, evtWeight );
+          fillHisto(outFile_, cutflowType_, dir+"/A","A_mlZ_max_sig"+mass, 500, 0, 10000, mlZmax, evtWeight );
+          fillHisto(outFile_, cutflowType_, dir+"/A","A_genWeight", 500, -2, 2, genWeight, 1);
           }
           //Region-B
           if(mlZmax > (max + yStepVec[d]) && mlZmin < (min + xStepVec[d]) && isRegionB){
-          fillHisto(outFile_, cutflowType_, dir,"B_mlZ_min_sig"+mass, 500, 0, 10000, mlZmin, evtWeight );
-          fillHisto(outFile_, cutflowType_, dir,"B_mlZ_max_sig"+mass, 500, 0, 10000, mlZmax, evtWeight );
-          fillHisto(outFile_, cutflowType_, dir,"B_genWeight", 500, -2, 2, genWeight, 1);
+          fillHisto(outFile_, cutflowType_, dir+"/B","B_mlZ_min_sig"+mass, 500, 0, 10000, mlZmin, evtWeight );
+          fillHisto(outFile_, cutflowType_, dir+"/B","B_mlZ_max_sig"+mass, 500, 0, 10000, mlZmax, evtWeight );
+          fillHisto(outFile_, cutflowType_, dir+"/B","B_genWeight", 500, -2, 2, genWeight, 1);
           }
           //Region-C
           if(mlZmax > (max + yStepVec[d]) && mlZmin < (min + xStepVec[d]) && isRegionC){
-          fillHisto(outFile_, cutflowType_, dir,"C_mlZ_min_sig"+mass, 500, 0, 10000, mlZmin, evtWeight );
-          fillHisto(outFile_, cutflowType_, dir,"C_mlZ_max_sig"+mass, 500, 0, 10000, mlZmax, evtWeight );
-          fillHisto(outFile_, cutflowType_, dir,"C_genWeight", 500, -2, 2, genWeight, 1);
+          fillHisto(outFile_, cutflowType_, dir+"/C","C_mlZ_min_sig"+mass, 500, 0, 10000, mlZmin, evtWeight );
+          fillHisto(outFile_, cutflowType_, dir+"/C","C_mlZ_max_sig"+mass, 500, 0, 10000, mlZmax, evtWeight );
+          fillHisto(outFile_, cutflowType_, dir+"/C","C_genWeight", 500, -2, 2, genWeight, 1);
           }
           //Region-D
           if(mlZmax > (max + yStepVec[d]) && mlZmin < (min + xStepVec[d]) && isRegionD){
-          fillHisto(outFile_, cutflowType_, dir,"D_mlZ_min_sig"+mass, 500, 0, 10000, mlZmin, evtWeight );
-          fillHisto(outFile_, cutflowType_, dir,"D_mlZ_max_sig"+mass, 500, 0, 10000, mlZmax, evtWeight );
-          fillHisto(outFile_, cutflowType_, dir,"D_genWeight", 500, -2, 2, genWeight, 1);
+          fillHisto(outFile_, cutflowType_, dir+"/D","D_mlZ_min_sig"+mass, 500, 0, 10000, mlZmin, evtWeight );
+          fillHisto(outFile_, cutflowType_, dir+"/D","D_mlZ_max_sig"+mass, 500, 0, 10000, mlZmax, evtWeight );
+          fillHisto(outFile_, cutflowType_, dir+"/D","D_genWeight", 500, -2, 2, genWeight, 1);
           }
           //Region-A; needed for old codes
           if(mlZmax > (max + yStepVec[d]) && mlZmin < (min + xStepVec[d]) && isRegionA){
@@ -884,6 +875,11 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
 }
 
 void Analyzer::processEvents(){ 
+  TString outFile("13TeV/outputDir/");
+  TString Filename_ = outFile+"_Anal.root";
+  TFile *outFile_ = TFile::Open( Filename_, "RECREATE" );
+  outFile_->SetCompressionLevel(9);
+  
   //Data, MC sample from lxplus and T2
   //CutFlowAnalysis("TTJetsP_MuMC_20171104_Ntuple_1.root", "PF", ""); 
   //CutFlowAnalysis("outFile_.root", "PF", ""); 
@@ -892,8 +888,11 @@ void Analyzer::processEvents(){
   //CutFlowAnalysis("root://se01.indiacms.res.in:1094//cms/store/user/sthakur/ntuple_for2016Data_MuMC_20190117/MuMC_20190117/TT_MuMC_20190117/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/TT_MuMC_20190117/190117_092153/0000/TT_MuMC_20190117_Ntuple_1.root" , "PF", "");
   //CutFlowAnalysis("root://se01.indiacms.res.in:1094//cms/store/user/sthakur/ntuple_for2016Data_MuMC_20190117/MuMC_20190117/DYJetsToLL_M50_MuMC_20190117/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DYJetsToLL_M50_MuMC_20190117/190117_091524/0000/DYJetsToLL_M50_MuMC_20190117_Ntuple_1.root" , "PF", "");
 
-  CutFlowAnalysis("root://se01.indiacms.res.in:1094//cms/store/user/rverma/ntuple_for2016MC_20190922/MC_20190922/DYJetsToLL_M50_MC_20190922/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DYJetsToLL_M50_MC_20190922/190922_144942/0000/DYJetsToLL_M50_MC_20190922_Ntuple_1.root", true , false);
+  CutFlowAnalysis("root://se01.indiacms.res.in:1094//cms/store/user/rverma/ntuple_for2016MC_20190922/MC_20190922/DYJetsToLL_M50_MC_20190922/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DYJetsToLL_M50_MC_20190922/190922_144942/0000/DYJetsToLL_M50_MC_20190922_Ntuple_1.root", true ,false, outFile_);
+  //CutFlowAnalysis("root://se01.indiacms.res.in:1094//cms/store/user/rverma/ntuple_for2016MC_20190922/MC_20190922/DYJetsToLL_M50_MC_20190922/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DYJetsToLL_M50_MC_20190922/190922_144942/0000/DYJetsToLL_M50_MC_20190922_Ntuple_1.root", false ,true, outFile_);
 
+  outFile_->Write(); 
+  outFile_->Close();
   //====================================
   //condor submission
   //CutFlowAnalysis("root://se01.indiacms.res.in:1094/inputFile", "PF", "outputFile");

@@ -5,125 +5,6 @@ ClassImp(ObjectSelector)
 
 using namespace std;
 
-//https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
-//Electron ID: veto
-bool ObjectSelector::cutBasedElectronID_Summer16_80X_V1_veto(const MyElectron *e)
-{
-  bool passID = false;
-  //barrel
-  if(abs(e->eleSCEta) <= 1.479 
-     && e->sigmaIetaIeta 	< 0.0115	 
-     && abs(e->dEtaInSeed) 	< 0.00749	
-     && abs(e->dPhiIn) 		< 0.228	
-     && e->hadOverEm 		< 0.356	
-     && e->relCombPFIsoEA 	< 0.175	
-     && abs(e->iEminusiP) 	< 0.299	
-     && e->nInnerHits       	<= 2
-     && e->passConversionVeto  
-    )passID = true;
-
-  //endcap 
-  if(abs(e->eleSCEta) > 1.479 
-     && e->sigmaIetaIeta 	< 0.037	
-     && abs(e->dEtaInSeed) 	< 0.00895	 
-     && abs(e->dPhiIn) 		< 0.213	
-     && e->hadOverEm 		< 0.211	
-     && e->relCombPFIsoEA 	< 0.159	
-     && abs(e->iEminusiP) 	< 0.15	
-     && e->nInnerHits       	<= 3
-     && e->passConversionVeto  
-     )passID = true;
-  return passID;
-}
-
-//Electron ID: loose
-bool ObjectSelector::cutBasedElectronID_Summer16_80X_V1_loose(const MyElectron *e)
-{
-  bool passID = false;
-  //barrel
-  if(abs(e->eleSCEta) <= 1.479 
-     && e->sigmaIetaIeta 	< 0.011	 
-     && abs(e->dEtaInSeed) 	< 0.00477	
-     && abs(e->dPhiIn) 		< 0.222	
-     && e->hadOverEm 		< 0.298	
-     && e->relCombPFIsoEA 	< 0.0994	
-     && abs(e->iEminusiP) 	< 0.241	
-     && e->nInnerHits       	<= 1
-     && e->passConversionVeto  
-    )passID = true;
-
-  //endcap 
-  if(abs(e->eleSCEta) > 1.479 
-     && e->sigmaIetaIeta 	< 0.0314	
-     && abs(e->dEtaInSeed) 	< 0.00868	 
-     && abs(e->dPhiIn) 		< 0.213	
-     && e->hadOverEm 		< 0.101	
-     && e->relCombPFIsoEA 	< 0.107	
-     && abs(e->iEminusiP) 	< 0.14	
-     && e->nInnerHits       	<= 1
-     && e->passConversionVeto  
-     )passID = true;
-  return passID;
-}
-
-//Electron ID: medium
-bool ObjectSelector::cutBasedElectronID_Summer16_80X_V1_medium(const MyElectron *e)
-{
-  bool passID = false;
-  //barrel
-  if(abs(e->eleSCEta) <= 1.479 
-     && e->sigmaIetaIeta 	< 0.00998	 
-     && abs(e->dEtaInSeed) 	< 0.00311	
-     && abs(e->dPhiIn) 		< 0.103	
-     && e->hadOverEm 		< 0.253	
-     ///&& e->relCombPFIsoEA 	< 0.0695	
-     && abs(e->iEminusiP) 	< 0.134	
-     && e->nInnerHits       	<= 1
-     && e->passConversionVeto  
-    )passID = true;
-
-  //endcap
-  if(abs(e->eleSCEta) > 1.479 
-     && e->sigmaIetaIeta 	< 0.0298	
-     && abs(e->dEtaInSeed) 	< 0.00609	 
-     && abs(e->dPhiIn) 		< 0.045	
-     && e->hadOverEm 		< 0.0878	
-     ///&& e->relCombPFIsoEA 	< 0.0821	
-     && abs(e->iEminusiP) 	< 0.13	
-     && e->nInnerHits       	<= 1
-     && e->passConversionVeto  
-     )passID = true;
-  return passID;
-}
-
-//Electron ID: tight
-bool ObjectSelector::cutBasedElectronID_Summer16_80X_V1_tight(const MyElectron *e)
-{
-  bool passID = false;
-  //barrel
-  if(abs(e->eleSCEta) <= 1.479 
-     && e->sigmaIetaIeta 	< 0.00998 
-     //&& abs(e->dEtaInSeed) 	< 0.00308
-     && abs(e->dPhiIn) 		< 0.0816 
-     && e->hadOverEm 		< 0.0414 
-     && e->relCombPFIsoEA 	< 0.0588
-     && abs(e->iEminusiP) 	< 0.0129 
-     && e->nInnerHits       	<= 1
-     && e->passConversionVeto  
-    )passID = true;
-  //endcap
-  if(abs(e->eleSCEta) > 1.479 
-     && e->sigmaIetaIeta 	< 0.0292 
-     && abs(e->dEtaInSeed) 	< 0.00605 
-     && abs(e->dPhiIn) 		< 0.0394
-     && e->hadOverEm 		< 0.0641
-     && e->relCombPFIsoEA 	< 0.0571
-     && abs(e->iEminusiP) 	< 0.0129
-     && e->nInnerHits       	<= 1
-     && e->passConversionVeto  
-     )passID = true;
-  return passID;
-}
 //Electron HEEP ID
   bool ObjectSelector::heepElectronID_HEEPV70(const MyElectron *e, MyVertex & vertex)
 {
@@ -165,9 +46,6 @@ void ObjectSelector::preSelectElectrons(vector<int> * e_i, const vector<MyElectr
     const MyElectron * e   = &vE[i];
     double ePt     	   = TMath::Abs(e->p4.pt());
     double eEta     	   = TMath::Abs(e->p4.eta());
-    //bool passID = cutBasedElectronID_Summer16_80X_V1_loose(e);
-    ///bool passID = cutBasedElectronID_Summer16_80X_V1_medium(e);
-    //bool passID = cutBasedElectronID_Summer16_80X_V1_tight(e);
     bool passID = heepElectronID_HEEPV70(e, vertex); 
     if(passID && ePt >35 && eEta <2.5 ){e_i->push_back(i);}
   }
@@ -258,8 +136,8 @@ bool ObjectSelector::looseElectronVeto(unsigned long selectedElectron, const vec
     double zelectron 	   = e->vertex.z();
     double dz 		   = fabs(zvertex - zelectron);
     if( i==selectedElectron) continue; 
-    bool passID = cutBasedElectronID_Summer16_80X_V1_veto(e);
-    if(passID && ePt >15 && d0 < 0.05 && dz < 0.1){looseVeto = true;}
+    //bool passID = cutBasedElectronID_Summer16_80X_V1_veto(e);
+    if(ePt >15 && d0 < 0.05 && dz < 0.1){looseVeto = true;}
   }
   return looseVeto;
 }
