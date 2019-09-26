@@ -159,7 +159,7 @@ bool ObjectSelector::cutBasedElectronID_Summer16_80X_V1_tight(const MyElectron *
   return passID; 
 }
 
-void ObjectSelector::preSelectElectrons(vector<int> * e_i, const vector<MyElectron> & vE , MyVertex & vertex, bool isPFlow){
+void ObjectSelector::preSelectElectrons(vector<int> * e_i, const vector<MyElectron> & vE , MyVertex & vertex){
   //https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2#Offline_selection_criteria
   for(unsigned int i=0;i<vE.size();i++){
     const MyElectron * e   = &vE[i];
@@ -230,7 +230,7 @@ void ObjectSelector::preSelectJets( string jetAlgo, vector<int> * j_i, const vec
 }
 
 
-bool ObjectSelector::looseMuonVeto( int selectedMuon, const vector<MyMuon> & vM, bool isPFlow){
+bool ObjectSelector::looseMuonVeto( int selectedMuon, const vector<MyMuon> & vM){
   bool looseVeto(false);
   for(int i=0;i< (int)vM.size();i++){
     if( i==selectedMuon ){continue;}
@@ -246,7 +246,7 @@ bool ObjectSelector::looseMuonVeto( int selectedMuon, const vector<MyMuon> & vM,
     
 }
 
-bool ObjectSelector::looseElectronVeto(unsigned long selectedElectron, const vector<MyElectron> & vE, MyVertex & vertex, bool isPFlow){
+bool ObjectSelector::looseElectronVeto(unsigned long selectedElectron, const vector<MyElectron> & vE, MyVertex & vertex){
   //https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2#Offline_selection_criteria
   bool looseVeto(false);
   for(unsigned long i=0;i<vE.size();i++){

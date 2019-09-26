@@ -135,8 +135,8 @@ public :
     delete evR;
   };
   
-  void CutFlowAnalysis(TString url,  string myKey="PFlow", string evtType="data");
-  void CutFlowProcessor(TString url,  string myKey="PFlow", TString cutflowType="base", TFile *outFile_=0);
+  void CutFlowAnalysis(TString url, bool isMuChannel, bool isEleChannel);
+  void CutFlowProcessor(TString url,  TString cutflowType="base", TFile *outFile_=0);
   //void CreateAnalHistos(TString flowType, TFile* outFile_);
   void processEvents();
 private :

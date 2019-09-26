@@ -40,13 +40,13 @@ public :
   }
 
   // preselection of objects
-  void preSelectElectrons(vector<int> * e_i, const vector<MyElectron> & vE , MyVertex & vertex, bool isPFlow=false);
+  void preSelectElectrons(vector<int> * e_i, const vector<MyElectron> & vE , MyVertex & vertex);
   void preSelectMuons(vector<int> * m_i, const vector<MyMuon> & vM , MyVertex & vertex, bool isData=false);
   void preSelectJets( string jetAlgo, vector<int> * j_i, const vector<MyJet> & vJ, int jes=0, int jer=0);
 
   //Loose Lepton veto
-  bool looseElectronVeto(unsigned long selectedElectron, const vector<MyElectron> & vE, MyVertex & vertex, bool isPFlow=false);
-  bool looseMuonVeto( int selectedMuon, const vector<MyMuon> & vM, bool isPFlow=false);
+  bool looseElectronVeto(unsigned long selectedElectron, const vector<MyElectron> & vE, MyVertex & vertex);
+  bool looseMuonVeto( int selectedMuon, const vector<MyMuon> & vM);
   
   //HighPt Muon ID
   bool isHighPtMuon(const MyMuon * m);
