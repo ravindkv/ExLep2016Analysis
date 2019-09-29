@@ -45,16 +45,14 @@ public :
   void preSelectJets( string jetAlgo, vector<int> * j_i, const vector<MyJet> & vJ, int jes=0, int jer=0);
 
   //Loose Lepton veto
-  bool looseElectronVeto(unsigned long selectedElectron, const vector<MyElectron> & vE, MyVertex & vertex);
-  bool looseMuonVeto( int selectedMuon, const vector<MyMuon> & vM);
+  bool looseElectronVeto(unsigned long selEle1,unsigned long selEle2, const vector<MyElectron> & vE);
+  bool looseMuonVeto(int selMu1, int selMu2, const vector<MyMuon> & vM);
   
   //HighPt Muon ID
   bool isHighPtMuon(const MyMuon * m);
   bool heepElectronID_HEEPV70(const MyElectron *e, MyVertex & vertex);
+  bool cutBasedElectronID_Summer16_80X_V1_veto(const MyElectron *e); 
   // object cleaning
-  void ElectronCleaning( const vector<MyElectron> & vE, const vector<MyMuon> & vM, vector<int> * e_old, vector<int> * e_new, vector<int> * mu, double DR );
-
-  void JetCleaning(const vector<MyJet> & vJ, const vector<MyMuon> & vM, const vector<MyElectron> & vE, vector<int> * j_old, vector<int> * j_new, vector<int> * mu, vector<int> * el, double DR);
   double DeltaR(MyLorentzVector aV, MyLorentzVector bV); 
     
   

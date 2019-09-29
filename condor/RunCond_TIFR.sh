@@ -20,9 +20,9 @@ source /cvmfs/cms.cern.ch/cmsset_default.sh
 eval `scram runtime -sh`
 #voms-proxy-init --voms cms
 
-log="log_20170620_"
+log="log_"
 logDir=$log${ntupleT2Paths/.txt/""}
-baseDir="/home/sthakur/t3store3/xRavindra/condor_log/for2016Data"
+baseDir="/home/rverma/t3store3/AN-18-126/Analyze2016Data/CondorLog/"
 mkdir -p $baseDir$logDir
 outcond="$baseDir$logDir"
 

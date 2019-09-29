@@ -195,13 +195,13 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
     //Muon channel
     if(isMuChannel){
       for(size_t it = 0; it < trig.size(); it++){
-        if(trig[it].find("HLT_IsoMu24") != string::npos || 
-      	      trig[it].find("HLT_IsoTkMu") != string::npos) {
+        if(trig[it].find("HLT_Mu50") != string::npos || 
+      	      trig[it].find("HLT_TkMu50") != string::npos) {
           passTrig = true;
         }
       } 
       for(size_t it = 0; it < trig.size(); it++){
-        if(trig[it].find("HLT_IsoMu24") != string::npos) passOneTrig = true;
+        if(trig[it].find("HLT_Mu50") != string::npos) passOneTrig = true;
       } 
       if(passTrig)n_twoTrig++;
       if(passOneTrig) n_oneTrig++;
@@ -209,7 +209,7 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
     //Electron channel
     if(isEleChannel){
       for(size_t it = 0; it < trig.size(); it++){
-        if(trig[it].find("HLT_DoubleEle33_CaloIdL") != string::npos) {
+        if(trig[it].find("HLT_DoubleEle33_CaloIdL_MW") != string::npos) {
           passTrig = true;
         }
       }
@@ -238,12 +238,6 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
     preSelectElectrons(&e_init, pfElectrons, Vertices[0]);
     vector<int> j_init; j_init.clear();
     preSelectJets(jAlgo, &j_init, pfJets, jes, jer);
-    
-    //clean objects //
-    vector<int> e_final; e_final.clear();
-    ElectronCleaning( pfElectrons, pfMuons, &e_init, &e_final, &m_init, DRMIN_ELE);
-    vector<int> j_final; j_final.clear();
-    JetCleaning(pfJets, pfMuons, pfElectrons,  &j_init, &j_final, &m_init, &e_final, DRMIN_JET);
     
     //---------------------------------------------------//
     //apply selection cuts on leptons
@@ -279,13 +273,19 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
       if(charge1 != charge2)
         fillHisto(outFile_, cutflowType, "", "oppCharge", 10, -2, 2, 1, evtWeight);
     }
-
     //both lepton should have opposite charge
     if(charge1 == charge2) continue;
-    
-    //veto first or 2nd muon, if they are fake
-    ///if(looseMuonVeto( m1, pfMuons, isPFlow) ) continue;
-    ///if(looseMuonVeto( m2, pfMuons, isPFlow) ) continue;
+    //veto third loose lepton
+    bool isVeto = false;
+    if(isMuChannel){
+        isVeto = looseElectronVeto(-1, -1, pfElectrons) || 
+            looseMuonVeto(lepton1, lepton2, pfMuons) ;
+    }
+    if(isEleChannel){
+        isVeto = looseElectronVeto(lepton1, lepton2, pfElectrons) || 
+            looseMuonVeto(-1, -1, pfMuons) ;
+    }
+    if(isVeto) continue;
 
     //---------------------------------------------------//
     //apply lepton SF to eventWeights 
@@ -360,12 +360,12 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
     //---------------------------------------------------//
     //get 4 vector for Z boson
     //---------------------------------------------------//
-    if(j_final.size()==0) continue;
+    if(j_init.size()==0) continue;
     bool isControlSel = true;
     MyLorentzVector vZ; 
     if(isMuChannel) vZ = pfMuons[lepton1].p4 + pfMuons[lepton2].p4;
     if(isEleChannel) vZ = pfElectrons[lepton1].p4 + pfElectrons[lepton2].p4;
-    int count_jets = j_final.size();
+    int count_jets = j_init.size();
     if(vZ.mass() < 60) isControlSel = false;
     //---------------------------------------------------//
     //Fill histos with for Control Plots
@@ -388,8 +388,8 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
       double pfCMVA = 0.0; //pfCombinedMVAV2BJetTags
       //fill histos for jets
       double count_CSVT_SF = 0.0;
-      for(size_t ijet = 0; ijet < j_final.size(); ijet++){
-        int ind_jet = j_final[ijet];
+      for(size_t ijet = 0; ijet < j_init.size(); ijet++){
+        int ind_jet = j_init[ijet];
         double jetPt = jetPtWithJESJER(pfJets[ind_jet], jes, jer);
         if(isMuChannel){
           dR1 = DeltaR(pfJets[ind_jet].p4, pfMuons[lepton1].p4);
@@ -464,8 +464,8 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
     //apply B-tagging
     //---------------------------------------------------//
     std::vector<int> storeBTag;
-    for(size_t ijet = 0; ijet < j_final.size(); ijet++){
-      int ind_jet = j_final[ijet];
+    for(size_t ijet = 0; ijet < j_init.size(); ijet++){
+      int ind_jet = j_init[ijet];
       double pfCISV = pfJets[ind_jet].bDiscriminator["pfCombinedInclusiveSecondaryVertexV2BJetTags"];
       if(pfCISV > 0.9535) storeBTag.push_back(1);
       else storeBTag.push_back(0);
@@ -483,8 +483,8 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
     double bTagWt = 1.0; 
     if(isControlSel && isBTagVeto){
       if(!ev->isData){
-        for(size_t ijet = 0; ijet < j_final.size(); ijet++){
-          int ind_jet = j_final[ijet];
+        for(size_t ijet = 0; ijet < j_init.size(); ijet++){
+          int ind_jet = j_init[ijet];
           double pMC_ = 1.0;
           double pData_ = 1.0;
           //b-quark
@@ -519,8 +519,8 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
     // the below jet selection criteria
     //---------------------------------------------------//
     std::vector<int> storePreSel;
-    for(size_t ijet = 0; ijet < j_final.size(); ijet++){
-      int ind_jet = j_final[ijet];
+    for(size_t ijet = 0; ijet < j_init.size(); ijet++){
+      int ind_jet = j_init[ijet];
       double jetPt = jetPtWithJESJER(pfJets[ind_jet], jes, jer);
       double jetEta = fabs(pfJets[ind_jet].p4.eta());
       double jetPmass = pfJets[ind_jet].ak8Pmass;
@@ -544,8 +544,8 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
       if (storePreSel[f]==0) isPreSel=false;
     }
     if(isControlSel && isBTagVeto && isPreSel){
-      for(size_t ijet = 0; ijet < j_final.size(); ijet++){
-        int ind_jet = j_final[ijet];
+      for(size_t ijet = 0; ijet < j_init.size(); ijet++){
+        int ind_jet = j_init[ijet];
         double jetPt = jetPtWithJESJER(pfJets[ind_jet], jes, jer);
         double jetEta = fabs(pfJets[ind_jet].p4.eta());
         double jetPmass = pfJets[ind_jet].ak8Pmass;
@@ -614,8 +614,8 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
     vector<size_t> allZjet;
     bool isZTagSel = false;
     int countFatJet = 0;
-    for(size_t ijet = 0; ijet < j_final.size(); ijet++){
-      int ind_jet = j_final[ijet];
+    for(size_t ijet = 0; ijet < j_init.size(); ijet++){
+      int ind_jet = j_init[ijet];
       double jetPt = jetPtWithJESJER(pfJets[ind_jet], jes, jer);
       double jetPmass = pfJets[ind_jet].ak8Pmass;
       double ak8Tau21 = pfJets[ind_jet].ak8Tau2/pfJets[ind_jet].ak8Tau1;
@@ -633,14 +633,14 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
       MyLorentzVector vZmax;
       MyLorentzVector vZmin;
       if(isMuChannel){
-        vZmax =  pfJets[j_final[allZjet[0]]].p4 + pfMuons[lepton1].p4;
-        vZmin =  pfJets[j_final[allZjet[0]]].p4 + pfMuons[lepton2].p4;
+        vZmax =  pfJets[j_init[allZjet[0]]].p4 + pfMuons[lepton1].p4;
+        vZmin =  pfJets[j_init[allZjet[0]]].p4 + pfMuons[lepton2].p4;
       }
       if(isEleChannel){
-        vZmax =  pfJets[j_final[allZjet[0]]].p4 + pfElectrons[lepton1].p4;
-        vZmin =  pfJets[j_final[allZjet[0]]].p4 + pfElectrons[lepton2].p4;
+        vZmax =  pfJets[j_init[allZjet[0]]].p4 + pfElectrons[lepton1].p4;
+        vZmin =  pfJets[j_init[allZjet[0]]].p4 + pfElectrons[lepton2].p4;
       }
-      fillHisto(outFile_, cutflowType_, "ZTag","mass_fatjet", 500, 0, 5000, pfJets[j_final[allZjet[0]]].p4.M(), new_evtWeight);
+      fillHisto(outFile_, cutflowType_, "ZTag","mass_fatjet", 500, 0, 5000, pfJets[j_init[allZjet[0]]].p4.M(), new_evtWeight);
       nCutPass++;
       fillHisto(outFile_, cutflowType_, "", "cutflow", 20, 0.5, 20.5, nCutPass, new_evtWeight );
       //fill histos for muon
@@ -681,8 +681,8 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
       fillHisto(outFile_, cutflowType_, "ZTag","mlZ_max", 500, 0, 10000, mlZmax, new_evtWeight );
       fillHisto2D(outFile_, cutflowType_,"ZTag", "mlZmin_mlZmax",500, 0, 10000, mlZmin, 500, 0, 10000, mlZmax, new_evtWeight);
       //fill histos for jets
-      for(size_t ijet = 0; ijet < j_final.size(); ijet++){
-        int ind_jet = j_final[ijet];
+      for(size_t ijet = 0; ijet < j_init.size(); ijet++){
+        int ind_jet = j_init[ijet];
         double jetPt = jetPtWithJESJER(pfJets[ind_jet], jes, jer);
         double dR1 = 0.0;
         double dR2 = 0.0;
@@ -722,8 +722,8 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
     vector<size_t> allZjetBkgEst;
     bool isBkgEst = true;
     int countFatJetAgain = 0;
-    for(size_t ijet = 0; ijet < j_final.size(); ijet++){
-      int ind_jet = j_final[ijet];
+    for(size_t ijet = 0; ijet < j_init.size(); ijet++){
+      int ind_jet = j_init[ijet];
       double pfCISV = pfJets[ind_jet].bDiscriminator["pfCombinedInclusiveSecondaryVertexV2BJetTags"];
       double jetPt = jetPtWithJESJER(pfJets[ind_jet], jes, jer);
       double jetEta = fabs(pfJets[ind_jet].p4.eta());
@@ -750,12 +750,12 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
       MyLorentzVector vZmax;
       MyLorentzVector vZmin;
       if(isMuChannel){
-        vZmax =  pfJets[j_final[allZjetBkgEst[0]]].p4 + pfMuons[lepton1].p4;
-        vZmin =  pfJets[j_final[allZjetBkgEst[0]]].p4 + pfMuons[lepton2].p4;
+        vZmax =  pfJets[j_init[allZjetBkgEst[0]]].p4 + pfMuons[lepton1].p4;
+        vZmin =  pfJets[j_init[allZjetBkgEst[0]]].p4 + pfMuons[lepton2].p4;
       }
       if(isEleChannel){
-        vZmax =  pfJets[j_final[allZjetBkgEst[0]]].p4 + pfElectrons[lepton1].p4;
-        vZmin =  pfJets[j_final[allZjetBkgEst[0]]].p4 + pfElectrons[lepton2].p4;
+        vZmax =  pfJets[j_init[allZjetBkgEst[0]]].p4 + pfElectrons[lepton1].p4;
+        vZmin =  pfJets[j_init[allZjetBkgEst[0]]].p4 + pfElectrons[lepton2].p4;
       }
       double mlZmax = 0.0;
       double mlZmin = 0.0;
@@ -769,7 +769,7 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
       }
       double ml1l2 = vZ.M();
       double tau21 = 0.5;
-      //double tau21 = pfJets[j_final[allZjetBkgEst[0]]].ak8Tau2/pfJets[j_final[allZjetBkgEst[0]]].ak8Tau1;
+      //double tau21 = pfJets[j_init[allZjetBkgEst[0]]].ak8Tau2/pfJets[j_init[allZjetBkgEst[0]]].ak8Tau1;
       fillHisto2D(outFile_, cutflowType_,"ZTag", "ml1l2_tau21",10, 0, 1, tau21, 1000, 0, 10000, ml1l2, evtWeight);
       bool isRegionA = false;
       bool isRegionB = false;
@@ -876,38 +876,24 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
 
 void Analyzer::processEvents(){ 
   TString outFile("13TeV/outputDir/");
-  TString Filename_ = outFile+"_Anal.root";
+  TString Filename_ = outFile+"outputFile_Anal.root";
   TFile *outFile_ = TFile::Open( Filename_, "RECREATE" );
   outFile_->SetCompressionLevel(9);
   
-  //Data, MC sample from lxplus and T2
-  //CutFlowAnalysis("TTJetsP_MuMC_20171104_Ntuple_1.root", "PF", ""); 
-  //CutFlowAnalysis("outFile_.root", "PF", ""); 
-  //CutFlowAnalysis("root://se01.indiacms.res.in:1094/", "PF", "");
-
-  //CutFlowAnalysis("root://se01.indiacms.res.in:1094//cms/store/user/sthakur/ntuple_for2016Data_MuMC_20190117/MuMC_20190117/TT_MuMC_20190117/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/TT_MuMC_20190117/190117_092153/0000/TT_MuMC_20190117_Ntuple_1.root" , "PF", "");
-  //CutFlowAnalysis("root://se01.indiacms.res.in:1094//cms/store/user/sthakur/ntuple_for2016Data_MuMC_20190117/MuMC_20190117/DYJetsToLL_M50_MuMC_20190117/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DYJetsToLL_M50_MuMC_20190117/190117_091524/0000/DYJetsToLL_M50_MuMC_20190117_Ntuple_1.root" , "PF", "");
-
-  CutFlowAnalysis("root://se01.indiacms.res.in:1094//cms/store/user/rverma/ntuple_for2016MC_20190922/MC_20190922/DYJetsToLL_M50_MC_20190922/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DYJetsToLL_M50_MC_20190922/190922_144942/0000/DYJetsToLL_M50_MC_20190922_Ntuple_1.root", true ,false, outFile_);
-  //CutFlowAnalysis("root://se01.indiacms.res.in:1094//cms/store/user/rverma/ntuple_for2016MC_20190922/MC_20190922/DYJetsToLL_M50_MC_20190922/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DYJetsToLL_M50_MC_20190922/190922_144942/0000/DYJetsToLL_M50_MC_20190922_Ntuple_1.root", false ,true, outFile_);
-
+  //Local 
+  //TString pathLocal = "outFile_.root";
+  //CutFlowAnalysis(pathLocal, true, false, ""); 
+  //CutFlowAnalysis(pathLocal, false, true, ""); 
+  
+  //T2
+  TString pathT2 = "/cms/store/user/rverma/ntuple_for2016MC_20190922/MC_20190922/DYJetsToLL_M50_MC_20190922/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DYJetsToLL_M50_MC_20190922/190922_144942/0000/DYJetsToLL_M50_MC_20190922_Ntuple_1.root";
+  CutFlowAnalysis("root://se01.indiacms.res.in:1094/"+pathT2, true, false, outFile_);
+  //CutFlowAnalysis("root://se01.indiacms.res.in:1094/"+pathT2, false, true, outFile_);
+  //================
+  //condor submission
+  //================
+  //CutFlowAnalysis("root://se01.indiacms.res.in:1094/inputFile", true, false, outFile_);
+  //CutFlowAnalysis("root://se01.indiacms.res.in:1094/inputFile", false, true, outFile_);
   outFile_->Write(); 
   outFile_->Close();
-  //====================================
-  //condor submission
-  //CutFlowAnalysis("root://se01.indiacms.res.in:1094/inputFile", "PF", "outputFile");
-  //====================================
 } 
-/*
-void runAnalysis(){
-  Analyzer a;
- a.CutFlowAnalysis("root://se01.indiacms.res.in:1094//cms/store/user/rverma/ntuple_for2016MC_20190922/MC_20190922/DYJetsToLL_M50_MC_20190922/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DYJetsToLL_M50_MC_20190922/190922_144942/0000/DYJetsToLL_M50_MC_20190922_Ntuple_1.root", "PF", "");
-}
-
-void Analyzer(){
-  runAnalysis();
-  //gROOT->ProcessLine(TString::Format(".L %s.C+",arg));
-  //gROOT->ProcessLine(TString::Format("%s t",arg));
-  //gROOT->ProcessLine("t.processEvents()");
-}
-*/

@@ -2,11 +2,11 @@
    
 ### Download and compile the package  ###  
 * source /cvmfs/cms.cern.ch/cmsset_default.sh
-* cmsrel CMSSW_8_0_28
-* cd CMSSW_8_0_28/src
+* cmsrel CMSSW_10_4_0
+* cd CMSSW_10_4_0/src
 * cmsenv
-* https://github.com/shalinithakur06/Analysis.git 
-* cd Analysis/src
+* https://github.com/ravindkv/ExLep2016Analysis.git
+* cd ExLep2016Analysis/src
 * make clean 
 * make
 * cd .. 

@@ -4,7 +4,35 @@
 ClassImp(ObjectSelector)
 
 using namespace std;
-
+//https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
+//Electron ID: veto
+bool ObjectSelector::cutBasedElectronID_Summer16_80X_V1_veto(const MyElectron *e)
+{
+  bool passID = false;
+  //barrel
+  if(abs(e->eleSCEta) <= 1.479 
+     && e->sigmaIetaIeta    < 0.0115     
+     && abs(e->dEtaInSeed)  < 0.00749   
+     && abs(e->dPhiIn)      < 0.228 
+     && e->hadOverEm        < 0.356 
+     && e->relCombPFIsoEA   < 0.175 
+     && abs(e->iEminusiP)   < 0.299 
+     && e->nInnerHits           <= 2
+     && e->passConversionVeto  
+    )passID = true;
+  //endcap 
+  if(abs(e->eleSCEta) > 1.479 
+     && e->sigmaIetaIeta    < 0.037 
+     && abs(e->dEtaInSeed)  < 0.00895    
+     && abs(e->dPhiIn)      < 0.213 
+     && e->hadOverEm        < 0.211 
+     && e->relCombPFIsoEA   < 0.159 
+     && abs(e->iEminusiP)   < 0.15  
+     && e->nInnerHits           <= 3
+     && e->passConversionVeto  
+     )passID = true;
+  return passID;
+}
 //Electron HEEP ID
   bool ObjectSelector::heepElectronID_HEEPV70(const MyElectron *e, MyVertex & vertex)
 {
@@ -52,11 +80,21 @@ void ObjectSelector::preSelectElectrons(vector<int> * e_i, const vector<MyElectr
 }
 
 //https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
+//Jonas talk:
+//https://indico.cern.ch/event/848326/contributions/3564004/attachments/1910537/3156831/talk.pdf
 bool ObjectSelector::isHighPtMuon(const MyMuon * m){
   bool isHighPt(false);
+  bool globORTuneHits = false;
+  if(m->nMuonHits > 0 || m->nMuonHitsTuneP) globORTuneHits = true;
+  bool for10_4_X = false;
+  if(m->nMatchedStations==1){
+    if(m->isTrackerMuon && (m->expectedMatchedStations <2 || 
+             (m->nStationMask!=1 && m->nStationMask!=16) || m->nRPCLayers >2)){
+       for10_4_X = true; 
+    }
+  }
   isHighPt = m->isGlobalMuon &&
-	  m->nMuonHits > 0 && 
-	  m->nMatchedStations >1 &&
+	      globORTuneHits && for10_4_X &&
           m->bestMuPtErr/m->bestMuPtTrack < 0.3 &&
           m->nPixelHits > 0 &&
           m->nTrackerLayers > 5;
@@ -68,9 +106,9 @@ void ObjectSelector::preSelectMuons(vector<int> * m_i, const vector<MyMuon> & vM
     double mEta     = TMath::Abs(m->p4.eta());
     double mPt = TMath::Abs(m->p4.pt());
     bool passID = isHighPtMuon(m);
-    double iso = m->pfRelIso;
+    double iso = m->trkRelIso;
     if(passID && mPt > 35 && mEta < 2.4 && 
-		    abs(m->D0) < 0.2 && abs(m->Dz) < 0.5 && iso < 0.15){ 
+		    abs(m->D0) < 0.2 && abs(m->Dz) < 0.5 && iso < 0.05){ 
       m_i->push_back(i);
     }
   }
@@ -108,75 +146,33 @@ void ObjectSelector::preSelectJets( string jetAlgo, vector<int> * j_i, const vec
 }
 
 
-bool ObjectSelector::looseMuonVeto( int selectedMuon, const vector<MyMuon> & vM){
+bool ObjectSelector::looseMuonVeto( int selMu1, int selMu2, const vector<MyMuon> & vM){
   bool looseVeto(false);
   for(int i=0;i< (int)vM.size();i++){
-    if( i==selectedMuon ){continue;}
     const MyMuon * m = &vM[i];
-    bool isGlobalMuon = m->isGlobalMuon; 
+    bool isGlobalMuon = m->isGlobalMuon;
     double mEta     = TMath::Abs(m->p4.eta());
     double mPt      = TMath::Abs(m->p4.pt());
     double mRelIso  = m->pfRelIso;
     if(! isGlobalMuon) continue;
-    if(mEta<2.4  && mPt> 15 && mRelIso < 0.20 ){ looseVeto = true; }
+    if( i!=selMu1 && i!=selMu2 && mEta<2.4  && mPt> 15.0 && mRelIso < 0.25){ looseVeto = true; }
   }
   return looseVeto;
-    
 }
 
-bool ObjectSelector::looseElectronVeto(unsigned long selectedElectron, const vector<MyElectron> & vE, MyVertex & vertex){
-  //https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2#Offline_selection_criteria
+//https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2#Offline_selection_criteria
+bool ObjectSelector::looseElectronVeto(unsigned long selEle1,unsigned long selEle2, const vector<MyElectron> & vE){
   bool looseVeto(false);
   for(unsigned long i=0;i<vE.size();i++){
     const MyElectron * e   = &vE[i];
-    //double eEta     	   = TMath::Abs(e->p4.eta());
-    double ePt     	   = TMath::Abs(e->p4.pt());
-    double d0      	   = fabs(e->D0);
-    double zvertex   	   = vertex.XYZ.z();
-    double zelectron 	   = e->vertex.z();
-    double dz 		   = fabs(zvertex - zelectron);
-    if( i==selectedElectron) continue; 
-    //bool passID = cutBasedElectronID_Summer16_80X_V1_veto(e);
-    if(ePt >15 && d0 < 0.05 && dz < 0.1){looseVeto = true;}
+    double ePt         = TMath::Abs(e->p4.pt());
+    bool passID = cutBasedElectronID_Summer16_80X_V1_veto(e);
+    double dxy = abs(e->D0);
+    double dz  = abs(e->Dz);
+    if(i!=selEle1 && i!=selEle2 && passID && ePt >15.0 
+    && dxy<0.05 && dz < 0.1){looseVeto = true;}
   }
   return looseVeto;
-}
-
-
-void ObjectSelector::ElectronCleaning( const vector<MyElectron> & vE, const vector<MyMuon> & vM, vector<int> * e_old, vector<int> * e_new, vector<int> * mu, double DR ){
-  for(size_t i = 0; i < e_old->size(); i++){
-    int iele = (*e_old)[i];
-    double delR2Mu = 5.0;
-    for(size_t j = 0; j < mu->size(); j++){
-      int imu = (*mu)[j];
-      double delR = DeltaR(vE[iele].p4, vM[imu].p4);
-      if(delR < delR2Mu)delR2Mu = delR;
-    }
-    if(delR2Mu > DR) e_new->push_back(iele);
-  }
-}
-
-void ObjectSelector::JetCleaning(const vector<MyJet> & vJ, const vector<MyMuon> & vM, const vector<MyElectron> & vE,vector<int> * j_old, vector<int> * j_new, vector<int> * mu, vector<int> * el, double DR){
-  for(size_t i = 0; i < j_old->size(); i++){
-    int ijet = (*j_old)[i];
-
-    double delR2Mu = 5.0, delR2Ele = 5.0;
-    
-    for(size_t j = 0; j < mu->size(); j++){
-      int imu = (*mu)[j];
-      double delR = DeltaR(vJ[ijet].p4, vM[imu].p4);
-      if(delR < delR2Mu)delR2Mu = delR;
-    }
-    for(size_t k = 0; k < el->size(); k++){
-      int iele = (*el)[k];
-      double delR = DeltaR(vJ[ijet].p4, vE[iele].p4);
-      if(delR < delR2Ele)delR2Ele = delR;
-    }
-    if(delR2Mu > DR && delR2Ele > DR )
-    {
-        j_new->push_back(ijet);
-    }
-    }
 }
 
 double ObjectSelector::DeltaR(MyLorentzVector aV, MyLorentzVector bV){
