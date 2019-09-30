@@ -39,7 +39,7 @@ bool ObjectSelector::cutBasedElectronID_Summer16_80X_V1_veto(const MyElectron *e
   bool passID = false;
   float energy2x5Overenergy5x5 = e->energy2x5/e->energy5x5;
   //for barrel
-  if(abs(e->eleSCEta)                <=1.444
+  if(abs(e->eleSCEta)                <=1.4442
      && e->isEcalDriven              == 1 
      && abs(e->dEtaInSeed)           < 0.004 
      && abs(e->dPhiIn)               < 0.06 
@@ -85,7 +85,7 @@ void ObjectSelector::preSelectElectrons(vector<int> * e_i, const vector<MyElectr
 bool ObjectSelector::isHighPtMuon(const MyMuon * m){
   bool isHighPt(false);
   bool globORTuneHits = false;
-  if(m->nMuonHits > 0 || m->nMuonHitsTuneP) globORTuneHits = true;
+  if(m->nMuonHits > 0 || m->nMuonHitsTuneP >0) globORTuneHits = true;
   bool for10_4_X = false;
   if(m->nMatchedStations==1){
     if(m->isTrackerMuon && (m->expectedMatchedStations <2 || 
@@ -93,8 +93,10 @@ bool ObjectSelector::isHighPtMuon(const MyMuon * m){
        for10_4_X = true; 
     }
   }
+  bool isMatchedStations = false;
+  if(m->nMatchedStations >1 || for10_4_X) isMatchedStations = true;
   isHighPt = m->isGlobalMuon &&
-	      globORTuneHits && for10_4_X &&
+	      globORTuneHits && isMatchedStations &&
           m->bestMuPtErr/m->bestMuPtTrack < 0.3 &&
           m->nPixelHits > 0 &&
           m->nTrackerLayers > 5;
@@ -108,7 +110,7 @@ void ObjectSelector::preSelectMuons(vector<int> * m_i, const vector<MyMuon> & vM
     bool passID = isHighPtMuon(m);
     double iso = m->trkRelIso;
     if(passID && mPt > 35 && mEta < 2.4 && 
-		    abs(m->D0) < 0.2 && abs(m->Dz) < 0.5 && iso < 0.05){ 
+		    abs(m->D0) < 0.2 && abs(m->Dz) < 0.5 && iso < 0.10){ 
       m_i->push_back(i);
     }
   }

@@ -286,13 +286,14 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
             looseMuonVeto(-1, -1, pfMuons) ;
     }
     if(isVeto) continue;
+    if(isMuChannel && pfMuons[lepton1].p4.pt() < 53) continue;
 
     //---------------------------------------------------//
     //apply lepton SF to eventWeights 
     //---------------------------------------------------//
     double leptonSF = 1.0;
     if(isMuChannel && !ev->isData){
-      double lumi_BCDEF = 19.14; double lumi_GH = 16.23;	
+      double lumi_BCDEF = 19711; double lumi_GH = 16138;	
       double lumi = lumi_BCDEF + lumi_GH;
       //get muon scale factor for fist muon
       //trigger 	
@@ -308,11 +309,7 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
       double muSFiso_BCDEF1 	= getMuonSF(h2_isoSF_BCDEF, pfMuons[lepton1].p4.eta(), pfMuons[lepton1].p4.pt());
       double muSFiso_GH1 		= getMuonSF(h2_isoSF_GH, pfMuons[lepton1].p4.eta(), pfMuons[lepton1].p4.pt());
       double muSFiso1 		= (muSFiso_BCDEF1*lumi_BCDEF + muSFiso_GH1*lumi_GH)/lumi; 
-      //tracking 
-      double muSFtrack_BCDEF1 	= getMuonTrackSF(tg_trackSF_BCDEF, pfMuons[lepton1].p4.eta()); 
-      double muSFtrack_GH1 	= getMuonTrackSF(tg_trackSF_GH, pfMuons[lepton1].p4.eta()); 
-      double muSFtrack1 		= (muSFtrack_BCDEF1*lumi_BCDEF + muSFtrack_GH1*lumi_GH)/lumi;
-      double muSF1 = muSFtrig1*muSFid1*muSFiso1*muSFtrack1;	
+      double muSF1 = muSFtrig1*muSFid1*muSFiso1;	
       
       //get muon scale factor for 2nd muon
       //trigger 	
@@ -328,10 +325,7 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
       double muSFiso_GH2 		= getMuonSF(h2_isoSF_GH, pfMuons[lepton2].p4.eta(), pfMuons[lepton2].p4.pt());
       double muSFiso2 		= (muSFiso_BCDEF2*lumi_BCDEF + muSFiso_GH2*lumi_GH)/lumi; 
       //tracking 
-      double muSFtrack_BCDEF2 	= getMuonTrackSF(tg_trackSF_BCDEF, pfMuons[lepton2].p4.eta()); 
-      double muSFtrack_GH2 	= getMuonTrackSF(tg_trackSF_GH, pfMuons[lepton2].p4.eta()); 
-      double muSFtrack2 		= (muSFtrack_BCDEF2*lumi_BCDEF + muSFtrack_GH2*lumi_GH)/lumi;
-      double muSF2 = muSFtrig2*muSFid2*muSFiso2*muSFtrack2;	
+      double muSF2 = muSFtrig2*muSFid2*muSFiso2;	
       leptonSF = muSF1*muSF2;
     } 
     if(isEleChannel && !ev->isData){
@@ -802,16 +796,16 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
       sigMass.push_back("5000");  lCutMax.push_back(950); lCutMin.push_back(5200);
 
       vector<double>yStepVec;     vector<double>xStepVec;   vector<string>dirVec;         
-      yStepVec.push_back(0);      xStepVec.push_back(0);    dirVec.push_back("ZTag1");
-      yStepVec.push_back(50);     xStepVec.push_back(0);    dirVec.push_back("ZTag2");
-      yStepVec.push_back(100);    xStepVec.push_back(0);    dirVec.push_back("ZTag3");
-      yStepVec.push_back(200);    xStepVec.push_back(0);    dirVec.push_back("ZTag4");
-      yStepVec.push_back(300);    xStepVec.push_back(0);    dirVec.push_back("ZTag5");
-      yStepVec.push_back(400);    xStepVec.push_back(0);    dirVec.push_back("ZTag6");
-      yStepVec.push_back(500);    xStepVec.push_back(0);    dirVec.push_back("ZTag7");
-      yStepVec.push_back(600);    xStepVec.push_back(0);    dirVec.push_back("ZTag8");
-      yStepVec.push_back(700);    xStepVec.push_back(0);    dirVec.push_back("ZTag9");
-      yStepVec.push_back(800);    xStepVec.push_back(0);    dirVec.push_back("ZTag10");
+      yStepVec.push_back(0);      xStepVec.push_back(0);    dirVec.push_back("LCut1");
+      yStepVec.push_back(50);     xStepVec.push_back(0);    dirVec.push_back("LCut2");
+      yStepVec.push_back(100);    xStepVec.push_back(0);    dirVec.push_back("LCut3");
+      yStepVec.push_back(200);    xStepVec.push_back(0);    dirVec.push_back("LCut4");
+      yStepVec.push_back(300);    xStepVec.push_back(0);    dirVec.push_back("LCut5");
+      yStepVec.push_back(400);    xStepVec.push_back(0);    dirVec.push_back("LCut6");
+      yStepVec.push_back(500);    xStepVec.push_back(0);    dirVec.push_back("LCut7");
+      yStepVec.push_back(600);    xStepVec.push_back(0);    dirVec.push_back("LCut8");
+      yStepVec.push_back(700);    xStepVec.push_back(0);    dirVec.push_back("LCut9");
+      yStepVec.push_back(800);    xStepVec.push_back(0);    dirVec.push_back("LCut10");
 
       for(unsigned int l =0; l<sigMass.size(); l++){
         double max = lCutMax[l];
@@ -886,14 +880,16 @@ void Analyzer::processEvents(){
   //CutFlowAnalysis(pathLocal, false, true, ""); 
   
   //T2
+  /*
   TString pathT2 = "/cms/store/user/rverma/ntuple_for2016MC_20190922/MC_20190922/DYJetsToLL_M50_MC_20190922/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DYJetsToLL_M50_MC_20190922/190922_144942/0000/DYJetsToLL_M50_MC_20190922_Ntuple_1.root";
   CutFlowAnalysis("root://se01.indiacms.res.in:1094/"+pathT2, true, false, outFile_);
-  //CutFlowAnalysis("root://se01.indiacms.res.in:1094/"+pathT2, false, true, outFile_);
+  CutFlowAnalysis("root://se01.indiacms.res.in:1094/"+pathT2, false, true, outFile_);
+  */
   //================
   //condor submission
   //================
-  //CutFlowAnalysis("root://se01.indiacms.res.in:1094/inputFile", true, false, outFile_);
-  //CutFlowAnalysis("root://se01.indiacms.res.in:1094/inputFile", false, true, outFile_);
+  CutFlowAnalysis("root://se01.indiacms.res.in:1094/inputFile", true, false, outFile_);
+  CutFlowAnalysis("root://se01.indiacms.res.in:1094/inputFile", false, true, outFile_);
   outFile_->Write(); 
   outFile_->Close();
 } 
