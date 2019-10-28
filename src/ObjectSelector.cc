@@ -5,6 +5,39 @@ ClassImp(ObjectSelector)
 
 using namespace std;
 //https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
+bool ObjectSelector::cutBasedElectronID_Summer16_80X_V1_medium(const MyElectron *e, MyVertex & vertex)
+{
+  bool passID = false;
+  //barrel
+  double dxy = abs(e->D0);
+  double dz  = abs(e->Dz);
+  if(abs(e->eleSCEta) <= 1.479 
+     && e->sigmaIetaIeta    < 0.00998    
+     && abs(e->dEtaInSeed)  < 0.00311   
+     && abs(e->dPhiIn)      < 0.103 
+     && e->hadOverEm        < 0.253 
+     && e->relCombPFIsoEA    < 0.0695    
+     && abs(e->iEminusiP)   < 0.134
+     && dxy                 < 0.05
+     && dz                  < 0.10    
+     && e->nInnerHits       <= 1
+     && e->passConversionVeto  
+    )passID = true;
+  //endcap
+  if(abs(e->eleSCEta) > 1.479 
+     && e->sigmaIetaIeta    < 0.0298    
+     && abs(e->dEtaInSeed)  < 0.00609    
+     && abs(e->dPhiIn)      < 0.045 
+     && e->hadOverEm        < 0.0878    
+     && e->relCombPFIsoEA    < 0.0821    
+     && abs(e->iEminusiP)   < 0.13  
+     && dxy                 < 0.10
+     && dz                  < 0.20    
+     && e->nInnerHits       <= 1
+     && e->passConversionVeto  
+     )passID = true;
+  return passID;
+}
 //Electron ID: veto
 bool ObjectSelector::cutBasedElectronID_Summer16_80X_V1_veto(const MyElectron *e)
 {
@@ -38,17 +71,23 @@ bool ObjectSelector::cutBasedElectronID_Summer16_80X_V1_veto(const MyElectron *e
 {
   bool passID = false;
   float energy2x5Overenergy5x5 = e->energy2x5/e->energy5x5;
+  float energy1x5Overenergy5x5 = e->energy1x5/e->energy5x5;
+  double isRatio = false;
+  if(energy2x5Overenergy5x5 > 0.94 || energy1x5Overenergy5x5 > 0.83) 
+    isRatio = true;
+  double e1RelIso = e->relCombPFIsoEA;
   //for barrel
   if(abs(e->eleSCEta)                <=1.4442
      && e->isEcalDriven              == 1 
      && abs(e->dEtaInSeed)           < 0.004 
      && abs(e->dPhiIn)               < 0.06 
      && e->hadOverEm                 < 1/e->p4.E() + 0.05 
-     && energy2x5Overenergy5x5       > 0.94 
+     && isRatio
      && e->GsfEleEmHadD1IsoRhoCut    < 2+0.03*e->p4.pt()+0.28*e->eleRho 
      && e->eleTrkPt                  < 5  
      && e->nInnerHits                <=1   //Inner Lost Hits
      && abs(e->D0)                   < 0.02
+     && e1RelIso                     < 0.08
      )passID = true;
   //endcap
   double HadDepth = 0.0;
@@ -64,17 +103,18 @@ bool ObjectSelector::cutBasedElectronID_Summer16_80X_V1_veto(const MyElectron *e
      && e->eleTrkPt                    < 5
      && e->nInnerHits                  <=1
      && abs(e->D0)                     < 0.05
+     && e1RelIso                       < 0.08
      )passID = true;
   return passID; 
 }
 
 void ObjectSelector::preSelectElectrons(vector<int> * e_i, const vector<MyElectron> & vE , MyVertex & vertex){
-  //https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2#Offline_selection_criteria
   for(unsigned int i=0;i<vE.size();i++){
     const MyElectron * e   = &vE[i];
     double ePt     	   = TMath::Abs(e->p4.pt());
     double eEta     	   = TMath::Abs(e->p4.eta());
-    bool passID = heepElectronID_HEEPV70(e, vertex); 
+    bool passID = cutBasedElectronID_Summer16_80X_V1_medium(e, vertex); 
+    //bool passID = heepElectronID_HEEPV70(e, vertex); 
     if(passID && ePt >35 && eEta <2.5 ){e_i->push_back(i);}
   }
 }
@@ -175,6 +215,29 @@ bool ObjectSelector::looseElectronVeto(unsigned long selEle1,unsigned long selEl
     && dxy<0.05 && dz < 0.1){looseVeto = true;}
   }
   return looseVeto;
+}
+
+void ObjectSelector::JetCleaning(const vector<MyJet> & vJ, const vector<MyMuon> & vM, const vector<MyElectron> & vE,vector<int> * j_old, vector<int> * j_new, vector<int> * mu, vector<int> * el, double DR){
+  for(size_t i = 0; i < j_old->size(); i++){
+    int ijet = (*j_old)[i];
+
+    double delR2Mu = 5.0, delR2Ele = 5.0;
+    
+    for(size_t j = 0; j < mu->size(); j++){
+      int imu = (*mu)[j];
+      double delR = DeltaR(vJ[ijet].p4, vM[imu].p4);
+      if(delR < delR2Mu)delR2Mu = delR;
+    }
+    for(size_t k = 0; k < el->size(); k++){
+      int iele = (*el)[k];
+      double delR = DeltaR(vJ[ijet].p4, vE[iele].p4);
+      if(delR < delR2Ele)delR2Ele = delR;
+    }
+    if(delR2Mu > DR && delR2Ele > DR )
+    {
+        j_new->push_back(ijet);
+    }
+    }
 }
 
 double ObjectSelector::DeltaR(MyLorentzVector aV, MyLorentzVector bV){

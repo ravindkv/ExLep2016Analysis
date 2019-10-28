@@ -42,6 +42,7 @@ class MyElectron
   bool isEcalDriven;
   double energy5x5;
   double energy2x5;
+  double energy1x5;
   double eleRho;
   double eleTrkPt;
   double GsfEleEmHadD1IsoRhoCut;

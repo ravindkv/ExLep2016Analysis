@@ -41,6 +41,7 @@ public :
   }
   double getJERSF(double eta, int jer=0);
   double jetPtWithJESJER(MyJet jet, int jes=0, int jer=0); 
+  double metWithJESJER(const vector<MyJet> & vJ, vector<int> *j, MyMET MET, int jes, int jer, bool isData);
   void  openCSVfile(const std::string &filename); 
   double DeltaR(MyLorentzVector aV, MyLorentzVector bV);
   

@@ -1,0 +1,4 @@
+['MC:', '/cms/store/user/rverma/ntuple_for2016MC_20191001/MC_20191001/ST_s_MC_20191001/ST_s-channel_4f_leptonDecays_13TeV-amcatnlo-pythia8_TuneCUETP8M1/ST_s_MC_20191001', '/cms/store/user/rverma/ntuple_for2016MC_20191001/MC_20191001/ST_tW_antitop_MC_20191001/ST_tW_antitop_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M2T4/ST_tW_antitop_MC_20191001', '/cms/store/user/rverma/ntuple_for2016MC_20191001/MC_20191001/ST_tW_top_MC_20191001/ST_tW_top_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M2T4/ST_tW_top_MC_20191001', '/cms/store/user/rverma/ntuple_for2016MC_20191001/MC_20191001/ST_t_antitop_MC_20191001/ST_t-channel_antitop_4f_inclusiveDecays_TuneCUETP8M2T4_13TeV-powhegV2-madspin/ST_t_antitop_MC_20191001', '/cms/store/user/rverma/ntuple_for2016MC_20191001/MC_20191001/ST_t_top_MC_20191001/ST_t-channel_top_4f_inclusiveDecays_TuneCUETP8M2T4_13TeV-powhegV2-madspin/ST_t_top_MC_20191001'],
+
+['DATA:'],
+

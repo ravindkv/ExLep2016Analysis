@@ -22,7 +22,7 @@ is2017Data = False
 if(is2016Data):
     #USERS INPUTS
     isMC = True
-    isData = False
+    isData = True
     mc = []
     mc.append("DYJetsToLL_M50")
     mc.append("DYJetsToLL_Pt100To250")
@@ -35,6 +35,11 @@ if(is2016Data):
     mc.append("WW")
     mc.append("WZ")
     mc.append("ZZ")
+    mc.append("ST_tW_top")
+    mc.append("ST_tW_antitop")
+    mc.append("ST_t_top")
+    mc.append("ST_t_antitop")
+    mc.append("ST_s")
     mc.append("ExLepMuMuZ_M1000")
     mc.append("ExLepMuMuZ_M1250")
     mc.append("ExLepMuMuZ_M1500")
@@ -96,9 +101,11 @@ if(is2016Data):
     	execme("hadd -k all_DY_M50.root DYJetsToLL_M50_Merged.root")
     	execme("hadd -k all_DY.root all_DY_Pt.root all_DY_M50.root")
     	execme("hadd -k all_TT.root TT_Merged.root")
+    	execme("hadd -k all_ST.root ST_*Merged.root")
     	execme("hadd -k all_WJets.root  WJ*_Merged.root")
     	execme("hadd -k all_VV.root WW_Merged.root WZ_Merged.root ZZ_Merged.root")
-    	execme("hadd -k all_Bkg.root all_DY_M50.root all_TT.root all_WJets.root all_VV.root")
+    	execme("hadd -k all_Bkg.root all_DY.root all_TT.root all_ST.root all_WJets.root all_VV.root")
+    	execme("hadd -k all_NonDYBkg.root all_TT.root all_ST.root all_WJets.root all_VV.root")
         execme("hadd -k all_ExLepMuMuZ_M250.root ExLepMuMuZ_M250_Merged.root")
         execme("hadd -k all_ExLepMuMuZ_M500.root ExLepMuMuZ_M500_Merged.root")
         execme("hadd -k all_ExLepMuMuZ_M750.root ExLepMuMuZ_M750_Merged.root")

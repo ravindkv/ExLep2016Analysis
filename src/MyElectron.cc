@@ -22,6 +22,7 @@ MyElectron::MyElectron():
   isEcalDriven(true),
   energy5x5(-9),
   energy2x5(-9),
+  energy1x5(-9),
   eleRho(-9),
   eleTrkPt(-9),
   GsfEleEmHadD1IsoRhoCut(-9),
@@ -72,6 +73,7 @@ void MyElectron::Reset()
   isEcalDriven = true;
   energy5x5 = -9;
   energy2x5 = -9;
+  energy1x5 = -9;
   eleRho = -9;
   eleTrkPt= -9;
   GsfEleEmHadD1IsoRhoCut= -9; 

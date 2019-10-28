@@ -52,8 +52,10 @@ public :
   bool isHighPtMuon(const MyMuon * m);
   bool heepElectronID_HEEPV70(const MyElectron *e, MyVertex & vertex);
   bool cutBasedElectronID_Summer16_80X_V1_veto(const MyElectron *e); 
+  bool cutBasedElectronID_Summer16_80X_V1_medium(const MyElectron *e, MyVertex & vertex);
   // object cleaning
   double DeltaR(MyLorentzVector aV, MyLorentzVector bV); 
+  void JetCleaning(const vector<MyJet> & vJ, const vector<MyMuon> & vM, const vector<MyElectron> & vE, vector<int> * j_old, vector<int> * j_new, vector<int> * mu, vector<int> * el, double DR);
     
   
 private :
