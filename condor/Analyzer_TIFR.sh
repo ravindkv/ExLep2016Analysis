@@ -21,7 +21,7 @@ date
 #//////////// T3 /////////////////////////////////
 echo "CONDOR DIR: $_CONDOR_SCRATCH_DIR"
 cd ${_CONDOR_SCRATCH_DIR}
-cp -r /home/rverma/t3store3/AN-18-126/Analyze2016Data/CMSSW_10_4_0/ .
+cp -r /home/rverma/t3public/Analyze2016Data/CMSSW_10_4_0/ .
 
 #------------------------------------------------
 #copy the lxplus package to the remote machine

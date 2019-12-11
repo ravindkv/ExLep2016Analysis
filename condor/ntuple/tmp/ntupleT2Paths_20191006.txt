@@ -1,4 +1,0 @@
-['MC:'],
-
-['DATA:', '/cms/store/user/rverma/ntuple_for2016Data_20191006/Data_20191006/EleRunBver2v2_Data_20191006/SingleElectron/EleRunBver2v2_Data_20191006'],
-

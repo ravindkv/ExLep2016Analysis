@@ -8,21 +8,25 @@ bool isEleChannel = false;
 //TString zTagDir = "ZTag1";
 
 //INPUT FILES
-TFile* fData = TFile::Open("all_Data.root");
-TFile* fVV	= TFile::Open("all_VV.root");
-//TFile* fDY	= TFile::Open("all_DY_dd.root");
-TFile* fDY	= TFile::Open("all_DY.root");
-TFile* fTT	= TFile::Open("all_TT.root");
-TFile* fWJ	= TFile::Open("all_WJets.root");
-TFile* fBkg	= TFile::Open("all_NonDYBkg.root");
-//TFile* fBkg	= TFile::Open("all_Bkg.root");
+TFile* fData = TFile::Open("inputFiles/all_muData.root");
+TFile* fVV	= TFile::Open("inputFiles/all_VV.root");
+//TFile* fDY	= TFile::Open("inputFiles/all_DY_dd.root");
+TFile* fDY	= TFile::Open("inputFiles/all_DY.root");
+TFile* fTT	= TFile::Open("inputFiles/all_TT.root");
+TFile* fWJ	= TFile::Open("inputFiles/all_WJets.root");
+TFile* fBkg	= TFile::Open("inputFiles/all_NonDYBkg.root");
+//TFile* fBkg	= TFile::Open("inputFiles/all_Bkg.root");
+TFile *fSigMuMuZ250      = TFile::Open("inputFiles/all_ExLepMuMuZ_M250.root");
+TFile *fSigMuMuZ750      = TFile::Open("inputFiles/all_ExLepMuMuZ_M750.root");
+TFile *fSigMuMuZ1250     = TFile::Open("inputFiles/all_ExLepMuMuZ_M1250.root");
+TFile *fSigMuMuZ1750     = TFile::Open("inputFiles/all_ExLepMuMuZ_M1750.root");
 
 
 TH1F* getHisto(TFile *histFile, TString histPath, TString dir, TString histName){
   TH1F* hist; 
   TString fullPath = histPath+"/"+dir+"/"+histName;
   if(!(histFile->Get(fullPath))){
-    hist = (TH1F*)(fTT->Get("base/Iso/ZTag/mll")->Clone(histName));
+    hist = (TH1F*)(fTT->Get("Muon/base/ZTag/mll")->Clone(histName));
     hist->Reset();
   }else hist = (TH1F*)(histFile->Get(fullPath))->Clone(histName);
   return hist;
@@ -46,10 +50,10 @@ string doubleToStr(double val){
 }
 
 string makeOneRow(string procName, TFile *inFile, TString zTagDir, TString mass){
-  TH1F * hA = (TH1F*)getHisto(inFile, "base/Iso", zTagDir, "A_mlZ_max_sig"+mass);
-  TH1F * hB = (TH1F*)getHisto(inFile, "base/Iso", zTagDir, "B_mlZ_max_sig"+mass);
-  TH1F * hC = (TH1F*)getHisto(inFile, "base/Iso", zTagDir, "C_mlZ_max_sig"+mass);
-  TH1F * hD = (TH1F*)getHisto(inFile, "base/Iso", zTagDir, "D_mlZ_max_sig"+mass);
+  TH1F * hA = (TH1F*)getHisto(inFile, "Muon/base", zTagDir, "A/A_mlZ_max_sig"+mass);
+  TH1F * hB = (TH1F*)getHisto(inFile, "Muon/base", zTagDir, "B/B_mlZ_max_sig"+mass);
+  TH1F * hC = (TH1F*)getHisto(inFile, "Muon/base", zTagDir, "C/C_mlZ_max_sig"+mass);
+  TH1F * hD = (TH1F*)getHisto(inFile, "Muon/base", zTagDir, "D/D_mlZ_max_sig"+mass);
   double yieldA = hA->Integral();
   double yieldB = hB->Integral();
   double yieldC = hC->Integral();
@@ -71,20 +75,27 @@ void makeOneTable(ofstream & outFile, TString zTagDir, TString mass){
   outFile<<"\\begin{table}"<<endl;
   outFile<<"\\begin{center}"<<endl;  
   //outFile<<"\\begin{LARGE}"<<endl;  
+  outFile<<"\\begin{adjustbox}{max width=\\textwidth} "<<endl; 
   outFile<<"\\begin{tabular}{cccccc}"<<endl;  
   outFile<<"\\hline "<<endl; 
   outFile<<"Process & $N_A \\pm stat$ &  $N_B \\pm stat$ & $N_C \\pm stat$ & $N_D \\pm stat$ \\\\"<<endl; // & $\\frac{N_B\\times N_C}{N_D}$\\\\"<<endl;
   outFile<<" & ($>200, <0.60$) & ($<200, <0.60$) &($>200, >0.60$) & ($<200, >0.60$)  \\\\"<<endl; 
-  outFile<<"\\hline  \\noalign{\\vskip 0.1cm}"<<endl; 
-  outFile<<makeOneRow("MC $Z/\\gamma$ + jets", fDY, zTagDir, mass)<<" \\\\ \\noalign{\\vskip 0.1cm}"<<endl;
-  outFile<<"\\hline  \\noalign{\\vskip 0.1cm}"<<endl; 
-  outFile<<makeOneRow("$ t\\bar{t}$ + jets ", fTT, zTagDir, mass)<<" \\\\ \\noalign{\\vskip 0.1cm}"<<endl;
-  outFile<<makeOneRow("VV + jets", fVV, zTagDir, mass)<<" \\\\ \\noalign{\\vskip 0.1cm}"<<endl;
-  outFile<<makeOneRow("Non DY Bkg", fBkg, zTagDir, mass)<<" \\\\ \\noalign{\\vskip 0.1cm}"<<endl;
-  outFile<<"\\hline  \\noalign{\\vskip 0.1cm}"<<endl; 
-  outFile<<makeOneRow(" Data", fData, zTagDir, mass)<<" \\\\ \\noalign{\\vskip 0.1cm}"<<endl;
+  outFile<<"\\hline "<<endl; 
+  outFile<<makeOneRow("$M_{l^*} = 250$ GeV", fSigMuMuZ250, zTagDir, mass)<<" \\\\"<<endl;
+  outFile<<makeOneRow("$M_{l^*} = 750$ GeV", fSigMuMuZ750, zTagDir, mass)<<" \\\\"<<endl;
+  outFile<<makeOneRow("$M_{l^*} = 1250$ GeV", fSigMuMuZ1250, zTagDir, mass)<<" \\\\"<<endl;
+  outFile<<makeOneRow("$M_{l^*} = 1750$ GeV", fSigMuMuZ1750, zTagDir, mass)<<" \\\\"<<endl;
+  outFile<<"\\hline "<<endl; 
+  outFile<<makeOneRow("MC $Z/\\gamma$ + jets", fDY, zTagDir, mass)<<" \\\\"<<endl;
+  outFile<<"\\hline "<<endl; 
+  outFile<<makeOneRow("$ t\\bar{t}$ + jets ", fTT, zTagDir, mass)<<" \\\\"<<endl;
+  outFile<<makeOneRow("VV + jets", fVV, zTagDir, mass)<<" \\\\"<<endl;
+  outFile<<makeOneRow("Non DY Bkg", fBkg, zTagDir, mass)<<" \\\\"<<endl;
+  outFile<<"\\hline "<<endl; 
+  outFile<<makeOneRow(" Data", fData, zTagDir, mass)<<" \\\\"<<endl;
   outFile<<"\\hline "<<endl;   
   outFile<<"\\end{tabular}"<<endl; 
+  outFile<<"\\end{adjustbox}"<<endl; 
   //outFile<<"\\end{LARGE}"<<endl;  
   outFile<<"\\end{center}"<<endl;
   string chName = "muon";
@@ -99,23 +110,24 @@ void MyBkgEstTable(){
   outFile<<"\\documentclass[]{article}"<<endl;  
   outFile<<"\\pagestyle{empty}"<<endl;  
   outFile<<"\\usepackage{epsfig}"<<endl;  
+  outFile<<"\\usepackage{adjustbox}"<<endl;  
   outFile<<"\\usepackage{amsmath}"<<endl;  
   outFile<<"\\begin{document}"<<endl;  
   outFile<<""<<endl;
-  makeOneTable(outFile, "ZTag3", "250");
-  makeOneTable(outFile, "ZTag3", "500");
-  makeOneTable(outFile, "ZTag3", "750");
-  makeOneTable(outFile, "ZTag3", "1000");
-  makeOneTable(outFile, "ZTag3", "1250");
-  makeOneTable(outFile, "ZTag3", "1500");
-  makeOneTable(outFile, "ZTag3", "1750");
-  makeOneTable(outFile, "ZTag3", "2000");
-  makeOneTable(outFile, "ZTag3", "2500");
-  makeOneTable(outFile, "ZTag3", "3000");
-  makeOneTable(outFile, "ZTag3", "3500");
-  makeOneTable(outFile, "ZTag3", "4000");
-  makeOneTable(outFile, "ZTag3", "4500");
-  makeOneTable(outFile, "ZTag3", "5000");
+  makeOneTable(outFile, "LCut1", "250");
+  makeOneTable(outFile, "LCut1", "500");
+  makeOneTable(outFile, "LCut1", "750");
+  makeOneTable(outFile, "LCut1", "1000");
+  makeOneTable(outFile, "LCut1", "1250");
+  makeOneTable(outFile, "LCut1", "1500");
+  makeOneTable(outFile, "LCut1", "1750");
+  makeOneTable(outFile, "LCut1", "2000");
+  makeOneTable(outFile, "LCut1", "2500");
+  makeOneTable(outFile, "LCut1", "3000");
+  makeOneTable(outFile, "LCut1", "3500");
+  makeOneTable(outFile, "LCut1", "4000");
+  makeOneTable(outFile, "LCut1", "4500");
+  makeOneTable(outFile, "LCut1", "5000");
   outFile<<"\\end{document}"<<endl; 
   outFile.close(); 
 } 

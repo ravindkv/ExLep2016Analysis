@@ -23,9 +23,6 @@
 
 using namespace std;
 
-bool isMuChannel = true;
-bool isEleChannel = false;
-bool isSaveHisto  = true;
 //-------------------------------------------//
 ///INPUT FILES
 //-------------------------------------------//
@@ -39,35 +36,35 @@ TFile* fWJ      = TFile::Open("all_WJets.root");
 TFile* fQCD     = TFile::Open("all_QCD.root");
 TFile* fST      = TFile::Open("all_ST.root");
 */
-TFile* fTT      = TFile::Open("all_ExLep_M250.root");
+TFile* fTT      = TFile::Open("inputFiles/all_ExLepEEZ_M250.root");
 
 //signal
-TFile *fM250      = TFile::Open("all_ExLep_M250.root");
-TFile *fM500      = TFile::Open("all_ExLep_M500.root");
-TFile *fM750      = TFile::Open("all_ExLep_M750.root");
-TFile *fM1000     = TFile::Open("all_ExLep_M1000.root");
-TFile *fM1250     = TFile::Open("all_ExLep_M1250.root");
-TFile *fM1500     = TFile::Open("all_ExLep_M1500.root");
-TFile *fM1750     = TFile::Open("all_ExLep_M1750.root");
-TFile *fM2000     = TFile::Open("all_ExLep_M2000.root");
-TFile *fM2500     = TFile::Open("all_ExLep_M2500.root");
-TFile *fM3000     = TFile::Open("all_ExLep_M3000.root");
-TFile *fM3500     = TFile::Open("all_ExLep_M3500.root");
-TFile *fM4000     = TFile::Open("all_ExLep_M4000.root");
-TFile *fM4500     = TFile::Open("all_ExLep_M4500.root");
-TFile *fM5000     = TFile::Open("all_ExLep_M5000.root");
+TFile *fM250      = TFile::Open("inputFiles/all_ExLepEEZ_M250.root");
+TFile *fM500      = TFile::Open("inputFiles/all_ExLepEEZ_M500.root");
+TFile *fM750      = TFile::Open("inputFiles/all_ExLepEEZ_M750.root");
+TFile *fM1000     = TFile::Open("inputFiles/all_ExLepEEZ_M1000.root");
+TFile *fM1250     = TFile::Open("inputFiles/all_ExLepEEZ_M1250.root");
+TFile *fM1500     = TFile::Open("inputFiles/all_ExLepEEZ_M1500.root");
+TFile *fM1750     = TFile::Open("inputFiles/all_ExLepEEZ_M1750.root");
+TFile *fM2000     = TFile::Open("inputFiles/all_ExLepEEZ_M2000.root");
+TFile *fM2500     = TFile::Open("inputFiles/all_ExLepEEZ_M2500.root");
+TFile *fM3000     = TFile::Open("inputFiles/all_ExLepEEZ_M3000.root");
+TFile *fM3500     = TFile::Open("inputFiles/all_ExLepEEZ_M3500.root");
+TFile *fM4000     = TFile::Open("inputFiles/all_ExLepEEZ_M4000.root");
+TFile *fM4500     = TFile::Open("inputFiles/all_ExLepEEZ_M4500.root");
+TFile *fM5000     = TFile::Open("inputFiles/all_ExLepEEZ_M5000.root");
 bool isSM250sto = true;
 
 //-------------------------------------------//
 //function to get histogram from root file
 //-------------------------------------------//
-TH1F* getHisto(TFile *file, TString histName, int histColor, Float_t xMin_ = 0.0, Float_t xMax_ = 500){
+TH1F* getHisto(TFile *file, TString chName, TString histName, int histColor, Float_t xMin_ = 0.0, Float_t xMax_ = 500){
 
   if(file->IsZombie() || file->IsZombie()){
     cout << "Cannot open file "<< endl;
   }
   TH1F* h;
-  h = (TH1F*)file->Get("base/Iso/ZTag/"+histName);
+  h = (TH1F*)file->Get(chName+"/base/ZTag/"+histName);
   //h->SetMarkerColor(kRed);
   cout<<h->GetNbinsX()<<endl;
   //h->Rebin();
@@ -78,7 +75,7 @@ TH1F* getHisto(TFile *file, TString histName, int histColor, Float_t xMin_ = 0.0
   h->SetLineWidth(3);
   cout<<histName<<": Int = "<<h->Integral()<<", Mean = "<<h->GetMean()<<", RMS = "<<h->GetRMS()<<endl;
   h->GetXaxis()->SetRangeUser(xMin_, xMax_);
-  h->GetYaxis()->SetRangeUser(0, 10);
+  h->GetYaxis()->SetRangeUser(0, 15);
   //h->GetXaxis()->SetTitle(histName);
   h->GetXaxis()->SetTitle("mass of fat-jet (GeV)");
   h->GetYaxis()->SetTitle("Events");
@@ -104,7 +101,7 @@ TPaveText * paveText(double minX, double minY, double maxX, double maxY, int lin
   return pt;
 }
 
-void MyOverlayHist(){
+void overlayHist(TString chName){
   TString histName = "mass_fatjet";
   gStyle->SetFrameLineWidth(2);
   //pave text CMS box
@@ -118,8 +115,8 @@ void MyOverlayHist(){
   //channel
   TPaveText *ch = paveText(0.25,0.80,0.30,0.85, 0, 19, 1, 0, 132);
   ch->SetTextSize(0.05);
-  if(isMuChannel) ch->AddText("#splitline{#mu + jets}{""}");
-  if(isEleChannel) ch->AddText("#splitline{e + jets}{""}");
+  if(chName=="Muon") ch->AddText("#splitline{#mu + jets}{""}");
+  if(chName=="Electron") ch->AddText("#splitline{e + jets}{""}");
      
   gStyle->SetOptStat(0);
   TCanvas *c1 = new TCanvas(histName, histName, 800, 800);
@@ -139,21 +136,21 @@ void MyOverlayHist(){
   double xMax_ = 400;
  
   //hWH80->GetYaxis()->SetRangeUser(1, 1.2* hWH80->GetMaximum());
-  TH1F* hM250   = getHisto(fM250 , histName, 2, xMin_, xMax_);
-  TH1F* hM500   = getHisto(fM500 , histName, 3, xMin_, xMax_);
-  TH1F* hM750   = getHisto(fM750 , histName, 4, xMin_, xMax_);
-  TH1F* hM1000  = getHisto(fM1000, histName, 52, xMin_, xMax_);
-  TH1F* hM1250  = getHisto(fM1250, histName, 6, xMin_, xMax_);
-  TH1F* hM1500  = getHisto(fM1500, histName, 7, xMin_, xMax_);
-  TH1F* hM1750  = getHisto(fM1750, histName, 8, xMin_, xMax_);
-  TH1F* hM2000  = getHisto(fM2000, histName, 11, xMin_, xMax_);
+  TH1F* hM250   = getHisto(fM250 , chName, histName, 2, xMin_, xMax_);
+  TH1F* hM500   = getHisto(fM500 , chName, histName, 3, xMin_, xMax_);
+  TH1F* hM750   = getHisto(fM750 , chName, histName, 4, xMin_, xMax_);
+  TH1F* hM1000  = getHisto(fM1000, chName, histName, 52, xMin_, xMax_);
+  TH1F* hM1250  = getHisto(fM1250, chName, histName, 6, xMin_, xMax_);
+  TH1F* hM1500  = getHisto(fM1500, chName, histName, 7, xMin_, xMax_);
+  TH1F* hM1750  = getHisto(fM1750, chName, histName, 8, xMin_, xMax_);
+  TH1F* hM2000  = getHisto(fM2000, chName, histName, 11, xMin_, xMax_);
   /*
-  TH1F* hM2500  = getHisto(fM2500, histName, 11, xMin_, xMax_);
-  TH1F* hM3000  = getHisto(fM3000, histName, 11, xMin_, xMax_);
-  TH1F* hM3500  = getHisto(fM3500, histName, 11, xMin_, xMax_);
-  TH1F* hM4000  = getHisto(fM4000, histName, 11, xMin_, xMax_);
-  TH1F* hM4500  = getHisto(fM4500, histName, 11, xMin_, xMax_);
-  TH1F* hM5000  = getHisto(fM5000, histName, 11, xMin_, xMax_);
+  TH1F* hM2500  = getHisto(fM2500, chName, histName, 11, xMin_, xMax_);
+  TH1F* hM3000  = getHisto(fM3000, chName, histName, 11, xMin_, xMax_);
+  TH1F* hM3500  = getHisto(fM3500, chName, histName, 11, xMin_, xMax_);
+  TH1F* hM4000  = getHisto(fM4000, chName, histName, 11, xMin_, xMax_);
+  TH1F* hM4500  = getHisto(fM4500, chName, histName, 11, xMin_, xMax_);
+  TH1F* hM5000  = getHisto(fM5000, chName, histName, 11, xMin_, xMax_);
   */
   //hTT->Draw("HIST");
   hM250 ->Draw("HIST");
@@ -192,11 +189,10 @@ void MyOverlayHist(){
   leg->Draw();
   ch->Draw();
   pt->Draw();
-  if(isSaveHisto){
-    TString outFile("$PWD/");
-    if(isMuChannel) outFile += "sig_"+histName+"_mu.png";
-    if(isEleChannel) outFile += "sig_"+histName+"_ele.pdf";
-    c1->SaveAs(outFile);
-    //c1->Close();
-  }
+  c1->SaveAs("$PWD/outputFiles/sig_"+chName+"_"+histName+".pdf");
+}
+
+void MyOverlayHist(){
+  //overlayHist("Muon");
+  overlayHist("Electron");
 }

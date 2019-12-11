@@ -21,6 +21,7 @@ print ""
 print"----------------------------------------------------"
 print" Fetching the un-processed ntuples, please wait ... "
 print"----------------------------------------------------"
+#for line_out in open(sys.argv[1]):
 for line_out in open("outHistoFiles.log"):
     line_out = line_out.strip()
     split_line_out = line_out.split("/")

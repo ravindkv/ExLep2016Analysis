@@ -564,9 +564,13 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
     //---------------------------------------------------//
     // tag a jet as Z-boson
     vector<size_t> allZjet;
+    vector<size_t> allZjetBkgEst;
     bool isZTagSel = false;
     int countFatJet = 0;
+    int countFatJetBkgEst = 0;
     double count_bJetT = 0.0;
+    double count_bJetTBkgEst = 0.0;
+    double count_bJetM = 0.0;
     int cut1 = 0.0;
     int cut2 = 0.0;
     int cut3 = 0.0;
@@ -578,18 +582,13 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
         double jetPt = jetPtWithJESJER(pfJets[ind_jet], jes, jer);
         double jetPmass = pfJets[ind_jet].ak8Pmass;
         double ak8Tau21 = pfJets[ind_jet].ak8Tau2/pfJets[ind_jet].ak8Tau1;
-        //tmp -------------
-        if(jetPt >200 && jetPmass > 70 && jetPmass < 110 ) cut1 ++;
-        if(jetPt >200 && jetPmass > 70 && jetPmass < 110 && vZ.M()> 200 ) cut2 ++;
-        if(jetPt >200 && jetPmass > 70 && jetPmass < 110 && vZ.M()> 200 && ak8Tau21 < 0.60) cut3 ++;
-        //----------------
-        if(jetPt >200 && jetPmass > 70 && jetPmass < 110 && vZ.M()> 200 && ak8Tau21 < 0.60){
+        pfCISV = pfJets[ind_jet].bDiscriminator["pfCombinedInclusiveSecondaryVertexV2BJetTags"];
+        pfCMVA = pfJets[ind_jet].bDiscriminator["pfCombinedMVAV2BJetTags"];
+        if(jetPt >200 && jetPmass > 65 && jetPmass < 95 && vZ.M()> 200 && ak8Tau21 < 0.60){
           countFatJet ++;
           allZjet.push_back(ijet);
         }
         else{//to veto non-fat jet
-          pfCISV = pfJets[ind_jet].bDiscriminator["pfCombinedInclusiveSecondaryVertexV2BJetTags"];
-          pfCMVA = pfJets[ind_jet].bDiscriminator["pfCombinedMVAV2BJetTags"];
           fillHisto(outFile_, cutflowType_, "ZTag", "pfCISV", 100, -2, 2, pfCISV, evtWeight );
           fillHisto(outFile_, cutflowType_, "ZTag", "pfCMVA", 100, -2, 2, pfCMVA, evtWeight );
           if(pfCISV > 0.9535){  //0.8484//tight working point
@@ -597,30 +596,27 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
             fillHisto(outFile_, cutflowType_, "ZTag", "pt_bjet", 100, 0, 1000, jetPt, evtWeight );
             fillHisto(outFile_, cutflowType_, "ZTag", "eta_bjet", 50, -5, 5, pfJets[ijet].p4.eta(), evtWeight );
           }
+          if(pfCISV > 0.8484){
+              count_bJetM++; 
+          }
+        }//else
+        //for bkg estimation
+        if(jetPt >200 && jetPmass > 65 && jetPmass < 95 ){
+          countFatJetBkgEst ++;
+          allZjetBkgEst.push_back(ijet);
         }
-      }
+        else{//to veto non-fat jet
+          if(pfCISV > 0.9535){  //0.8484//tight working point
+            count_bJetTBkgEst++;
+          }
+        }//else
+      }//for
     }
-    //tmp -------------
-    if(cut1==1){
-      nCutPass++;
-      fillHisto(outFile_, cutflowType_, "", "cutflow", 20, 0.5, 20.5, nCutPass, evtWeight );
-    }
-    if(cut2==1){
-      nCutPass++;
-      fillHisto(outFile_, cutflowType_, "", "cutflow", 20, 0.5, 20.5, nCutPass, evtWeight );
-    }
-    if(cut3==1){
-      nCutPass++;
-      fillHisto(outFile_, cutflowType_, "", "cutflow", 20, 0.5, 20.5, nCutPass, evtWeight );
-    }
-    /*
-    //----------------
     double new_evtWeight = 1.0;
     if(countFatJet==1){
       //apply tau21 scale factor
       //https://twiki.cern.ch/twiki/bin/view/CMS/JetWtagging#2016_scale_factors_and_correctio
-      if(!ev->isData) new_evtWeight = 1.0*evtWeight; 
-      //if(!ev->isData) new_evtWeight = 1.11*evtWeight; 
+      if(!ev->isData) new_evtWeight = 1.01*evtWeight; 
       MyLorentzVector vZmax;
       MyLorentzVector vZmin;
       if(isMuChannel){
@@ -632,6 +628,10 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
         vZmin =  pfJets[j_final[allZjet[0]]].p4 + pfElectrons[lepton2].p4;
       }
       fillHisto(outFile_, cutflowType_, "ZTag","multi_bjet",  16, -0.5, 15.5, count_bJetT, new_evtWeight );
+      fillHisto(outFile_, cutflowType_, "ZTag","multi_bjetM",  16, -0.5, 15.5, count_bJetM, new_evtWeight );
+      fillHisto(outFile_, cutflowType_, "ZTag","MET",  250, 0, 10000, metPt, new_evtWeight );
+      fillHisto2D(outFile_, cutflowType_,"ZTag", "Nbjet_MET",10, -0.5, 9.5, count_bJetT, 1000, 0, 10000, metPt, new_evtWeight);
+      fillHisto2D(outFile_, cutflowType_,"ZTag", "NbjetM_MET",10, -0.5, 9.5, count_bJetM, 1000, 0, 10000, metPt, new_evtWeight);
       fillHisto(outFile_, cutflowType_, "ZTag","mass_fatjet", 250, 0, 5000, pfJets[j_final[allZjet[0]]].p4.M(), new_evtWeight);
       nCutPass++;
       fillHisto(outFile_, cutflowType_, "", "cutflow", 20, 0.5, 20.5, nCutPass, new_evtWeight );
@@ -673,32 +673,28 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
       fillHisto(outFile_, cutflowType_, "ZTag","mlZ_max", 250, 0, 10000, mlZmax, new_evtWeight );
       fillHisto2D(outFile_, cutflowType_,"ZTag", "mlZmin_mlZmax",250, 0, 10000, mlZmin, 250, 0, 10000, mlZmax, new_evtWeight);
       //fill histos for jets
-      for(size_t ijet = 0; ijet < j_final.size(); ijet++){
-        int ind_jet = j_final[ijet];
-        double jetPt = jetPtWithJESJER(pfJets[ind_jet], jes, jer);
-        double dR1 = 0.0;
-        double dR2 = 0.0;
-        if(isMuChannel){
-          dR1 = DeltaR(pfJets[ind_jet].p4, pfMuons[lepton1].p4);
-          dR2 = DeltaR(pfJets[ind_jet].p4, pfMuons[lepton2].p4);
-        }
-        if(isEleChannel){
-          dR1 = DeltaR(pfJets[ind_jet].p4, pfElectrons[lepton1].p4);
-          dR2 = DeltaR(pfJets[ind_jet].p4, pfElectrons[lepton2].p4);
-        }
-        fillHisto(outFile_, cutflowType_, "ZTag","dR1", 50, 0, 10, dR1, new_evtWeight );
-        fillHisto(outFile_, cutflowType_, "ZTag","dR2", 50, 0, 10, dR2, new_evtWeight );
-        fillHisto(outFile_, cutflowType_, "ZTag","dR", 50, 0, 10, dR1, new_evtWeight );
-        fillHisto(outFile_, cutflowType_, "ZTag","dR", 50, 0, 10, dR2, new_evtWeight );
-        fillHisto(outFile_, cutflowType_, "ZTag","pt_jet", 250, 0, 10000, jetPt, new_evtWeight );
-        fillHisto(outFile_, cutflowType_, "ZTag","eta_jet", 50, -5, 5, pfJets[ind_jet].p4.eta(), new_evtWeight );
-        fillHisto(outFile_, cutflowType_, "ZTag","mass_jet", 250, 0, 5000, pfJets[ind_jet].p4.M(), new_evtWeight );
-        fillHisto(outFile_, cutflowType_, "ZTag","phi_jet", 50, -5, 5, pfJets[ind_jet].p4.phi(), new_evtWeight );
-        fillHisto(outFile_, cutflowType_, "ZTag","ak8Pmass", 250, 0, 5000, pfJets[ind_jet].ak8Pmass, new_evtWeight );
-        fillHisto(outFile_, cutflowType_, "ZTag","ak8Tau21", 50, 0, 5, pfJets[ind_jet].ak8Tau2/pfJets[ind_jet].ak8Tau1, new_evtWeight );
+      double jetPt = jetPtWithJESJER(pfJets[j_final[allZjet[0]]], jes, jer);
+      double dR1 = 0.0;
+      double dR2 = 0.0;
+      if(isMuChannel){
+        dR1 = DeltaR(pfJets[j_final[allZjet[0]]].p4, pfMuons[lepton1].p4);
+        dR2 = DeltaR(pfJets[j_final[allZjet[0]]].p4, pfMuons[lepton2].p4);
       }
+      if(isEleChannel){
+        dR1 = DeltaR(pfJets[j_final[allZjet[0]]].p4, pfElectrons[lepton1].p4);
+        dR2 = DeltaR(pfJets[j_final[allZjet[0]]].p4, pfElectrons[lepton2].p4);
+      }
+      fillHisto(outFile_, cutflowType_, "ZTag","dR1", 50, 0, 10, dR1, new_evtWeight );
+      fillHisto(outFile_, cutflowType_, "ZTag","dR2", 50, 0, 10, dR2, new_evtWeight );
+      fillHisto(outFile_, cutflowType_, "ZTag","dR", 50, 0, 10, dR1, new_evtWeight );
+      fillHisto(outFile_, cutflowType_, "ZTag","dR", 50, 0, 10, dR2, new_evtWeight );
+      fillHisto(outFile_, cutflowType_, "ZTag","pt_jet", 250, 0, 10000, jetPt, new_evtWeight );
+      fillHisto(outFile_, cutflowType_, "ZTag","eta_jet", 50, -5, 5, pfJets[j_final[allZjet[0]]].p4.eta(), new_evtWeight );
+      fillHisto(outFile_, cutflowType_, "ZTag","mass_jet", 250, 0, 5000, pfJets[j_final[allZjet[0]]].p4.M(), new_evtWeight );
+      fillHisto(outFile_, cutflowType_, "ZTag","phi_jet", 50, -5, 5, pfJets[j_final[allZjet[0]]].p4.phi(), new_evtWeight );
+      fillHisto(outFile_, cutflowType_, "ZTag","ak8Pmass", 250, 0, 5000, pfJets[j_final[allZjet[0]]].ak8Pmass, new_evtWeight );
+      fillHisto(outFile_, cutflowType_, "ZTag","ak8Tau21", 50, 0, 5, pfJets[j_final[allZjet[0]]].ak8Tau2/pfJets[j_final[allZjet[0]]].ak8Tau1, new_evtWeight );
       fillHisto(outFile_, cutflowType_, "ZTag","final_multi_jet", 15, 0, 15, count_jets, new_evtWeight );
-      fillHisto(outFile_, cutflowType_, "ZTag","MET",  250, 0, 10000, metPt, new_evtWeight );
       //fill histos for nvtx
       fillHisto(outFile_, cutflowType_, "ZTag","nvtx", 50, 0, 100, pri_vtxs, new_evtWeight );
       for(std::size_t n=0; n<Vertices.size(); n++){
@@ -716,11 +712,6 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
       nCutPass++;
       fillHisto(outFile_, cutflowType_, "", "cutflow", 20, 0.5, 20.5, nCutPass, new_evtWeight );
     }
-    if(countFatJet==1 && metPt < 200 && count_bJetT==0){
-      nCutPass++;
-      fillHisto(outFile_, cutflowType_, "", "cutflow", 20, 0.5, 20.5, nCutPass, new_evtWeight );
-    }
-
     //---------------------------------------------------//
     //apply B-tagging
     //---------------------------------------------------//
@@ -731,7 +722,7 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
     double pmc_btag = 1.0;
     double pdata_btag = 1.0;
     double bTagWt = 1.0; 
-    if(isControlSel && isBTagVeto && isLowMET){
+    if(countFatJet==1 && metPt < 200 && count_bJetT==0){
       if(!ev->isData){
         for(size_t ijet = 0; ijet < j_final.size(); ijet++){
           int ind_jet = j_final[ijet];
@@ -757,45 +748,21 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
         }
       bTagWt = pdata_btag/pmc_btag;
       }
-      evtWeight *= bTagWt;
+      new_evtWeight *= bTagWt;
       nCutPass++;
-      fillHisto(outFile_, cutflowType_, "", "cutflow", 20, 0.5, 20.5, nCutPass, evtWeight);
+      fillHisto(outFile_, cutflowType_, "", "cutflow", 20, 0.5, 20.5, nCutPass, new_evtWeight);
       fillHisto(outFile_, cutflowType, "", "bTagWeight", 100, 0, 2, bTagWt, 1);
+      nCutPass++;
+      fillHisto(outFile_, cutflowType_, "", "cutflow", 20, 0.5, 20.5, nCutPass, new_evtWeight );
     }
-   */
 
-    /*
     //---------------------------------------------------//
     //for background estimation
     //---------------------------------------------------//
-    vector<size_t> allZjetBkgEst;
     bool isBkgEst = true;
-    int countFatJetAgain = 0;
-    for(size_t ijet = 0; ijet < j_final.size(); ijet++){
-      int ind_jet = j_final[ijet];
-      double pfCISV = pfJets[ind_jet].bDiscriminator["pfCombinedInclusiveSecondaryVertexV2BJetTags"];
-      double jetPt = jetPtWithJESJER(pfJets[ind_jet], jes, jer);
-      double jetEta = fabs(pfJets[ind_jet].p4.eta());
-      double jetPmass = pfJets[ind_jet].ak8Pmass;
-      double dR1 = 0.0;
-      double dR2 = 0.0;
-      if(isMuChannel){
-        dR1 = DeltaR(pfJets[ind_jet].p4, pfMuons[lepton1].p4);
-        dR2 = DeltaR(pfJets[ind_jet].p4, pfMuons[lepton2].p4);
-      }
-      if(isEleChannel){
-        dR1 = DeltaR(pfJets[ind_jet].p4, pfElectrons[lepton1].p4);
-        dR2 = DeltaR(pfJets[ind_jet].p4, pfElectrons[lepton2].p4);
-      }
-      double ak8Tau21 = pfJets[ind_jet].ak8Tau2/pfJets[ind_jet].ak8Tau1;
-      //if(pfCISV <= 0.9535 && 
-      if( isControlSel && isPreSel && jetPt >200 && jetPmass > 70 && jetPmass < 110){
-	    countFatJetAgain ++;
-	    allZjetBkgEst.push_back(ijet);
-      }
-    }
-    if(countFatJetAgain==1){
-      if(!ev->isData) evtWeight *= 1.11; 
+    //if(countFatJetBkgEst==1){
+    if(countFatJetBkgEst==1 && metPt < 200 && count_bJetTBkgEst==0){
+      if(!ev->isData) evtWeight *= 1.01; 
       MyLorentzVector vZmax;
       MyLorentzVector vZmin;
       if(isMuChannel){
@@ -817,8 +784,7 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
         mlZmin = vZmax.M();
       }
       double ml1l2 = vZ.M();
-      double tau21 = 0.5;
-      //double tau21 = pfJets[j_final[allZjetBkgEst[0]]].ak8Tau2/pfJets[j_final[allZjetBkgEst[0]]].ak8Tau1;
+      double tau21 = pfJets[j_final[allZjetBkgEst[0]]].ak8Tau2/pfJets[j_final[allZjetBkgEst[0]]].ak8Tau1;
       fillHisto2D(outFile_, cutflowType_,"ZTag", "ml1l2_tau21",10, 0, 1, tau21, 1000, 0, 10000, ml1l2, evtWeight);
       bool isRegionA = false;
       bool isRegionB = false;
@@ -904,8 +870,48 @@ void Analyzer::CutFlowProcessor(TString url, TString cutflowType, TFile *outFile
           }
         }
       }
+      //for closure test
+      bool isRegionA1 = false;
+      bool isRegionB1 = false;
+      bool isRegionC1 = false;
+      bool isRegionD1 = false;
+      if(ml1l2 > 100 && ml1l2 < 200 && tau21 < 0.60) isRegionA1 = true;
+      if(ml1l2 < 100 && tau21 < 0.60) isRegionB1 = true;
+      if(ml1l2 > 100 && ml1l2 < 200 && tau21 > 0.60) isRegionC1 = true;
+      if(ml1l2 < 100 && tau21 > 0.60) isRegionD1 = true;
+      for(unsigned int l =0; l<sigMass.size(); l++){
+        double max = lCutMax[l];
+        double min = lCutMin[l];
+        TString mass = sigMass[l];
+        for(unsigned int d = 0; d<dirVec.size(); d++){
+          TString dir = dirVec[d];
+          //Region-A
+          if(mlZmax > (max + yStepVec[d]) && mlZmin < (min + xStepVec[d]) && isRegionA1){
+          fillHisto(outFile_, cutflowType_, dir+"/A1","A_mlZ_min_sig"+mass, 250, 0, 10000, mlZmin, evtWeight );
+          fillHisto(outFile_, cutflowType_, dir+"/A1","A_mlZ_max_sig"+mass, 250, 0, 10000, mlZmax, evtWeight );
+          fillHisto(outFile_, cutflowType_, dir+"/A1","A_genWeight", 500, -2, 2, genWeight, 1);
+          }
+          //Region-B
+          if(mlZmax > (max + yStepVec[d]) && mlZmin < (min + xStepVec[d]) && isRegionB1){
+          fillHisto(outFile_, cutflowType_, dir+"/B1","B_mlZ_min_sig"+mass, 250, 0, 10000, mlZmin, evtWeight );
+          fillHisto(outFile_, cutflowType_, dir+"/B1","B_mlZ_max_sig"+mass, 250, 0, 10000, mlZmax, evtWeight );
+          fillHisto(outFile_, cutflowType_, dir+"/B1","B_genWeight", 500, -2, 2, genWeight, 1);
+          }
+          //Region-C
+          if(mlZmax > (max + yStepVec[d]) && mlZmin < (min + xStepVec[d]) && isRegionC1){
+          fillHisto(outFile_, cutflowType_, dir+"/C1","C_mlZ_min_sig"+mass, 250, 0, 10000, mlZmin, evtWeight );
+          fillHisto(outFile_, cutflowType_, dir+"/C1","C_mlZ_max_sig"+mass, 250, 0, 10000, mlZmax, evtWeight );
+          fillHisto(outFile_, cutflowType_, dir+"/C1","C_genWeight", 500, -2, 2, genWeight, 1);
+          }
+          //Region-D
+          if(mlZmax > (max + yStepVec[d]) && mlZmin < (min + xStepVec[d]) && isRegionD1){
+          fillHisto(outFile_, cutflowType_, dir+"/D1","D_mlZ_min_sig"+mass, 250, 0, 10000, mlZmin, evtWeight );
+          fillHisto(outFile_, cutflowType_, dir+"/D1","D_mlZ_max_sig"+mass, 250, 0, 10000, mlZmax, evtWeight );
+          fillHisto(outFile_, cutflowType_, dir+"/D1","D_genWeight", 500, -2, 2, genWeight, 1);
+          }
+        }
+      }
     }//bkg estimation loop
-    */
     //if(i > 200000) break;
   }//event loop
   cout<<"Total events  = "<<nEntries<<endl;
